@@ -24,6 +24,9 @@ int main(int argc, char** argv) {
     }
     MagickWandGenesis();
     MagickWand* magick_wand = NewMagickWand();
+    if (!magick_wand) {
+        ThrowWandException(magick_wand);
+    }
     MagickBooleanType status = MagickReadImage(magick_wand, argv[1]);
     if (status == MagickFalse) {
         ThrowWandException(magick_wand);
@@ -49,20 +52,21 @@ int main(int argc, char** argv) {
             pixel.green = SigmoidalContrast(pixel.green);
             pixel.blue = SigmoidalContrast(pixel.blue);
             pixel.index = SigmoidalContrast(pixel.index);
-            PixelSetMagickColor(pixels[x], &pixel);
+            PixelSetPixelColor(pixels[x], &pixel);
         }
         PixelSyncIterator(iterator);
     }
     if (y < (long) MagickGetImageHeight(magick_wand)) {
         ThrowWandException(magick_wand);
     }
-    iterator = DestroyPixelIterator(iterator);
-    magick_wand = DestroyMagickWand(magick_wand);
-
     status = MagickWriteImages(magick_wand, argv[2], MagickTrue);
     if (status == MagickFalse) {
         ThrowWandException(magick_wand);
     }
+
+    iterator = DestroyPixelIterator(iterator);
+    magick_wand = DestroyMagickWand(magick_wand);
+
     MagickWandTerminus();
 
     return EXIT_SUCCESS;
