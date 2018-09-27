@@ -25,6 +25,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(OpenSSL 1.1.0 REQUIRED)
+find_package(ImageMagick COMPONENTS MagickWand REQUIRED)
 
 set(MAIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
@@ -34,7 +35,7 @@ set(ASS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/image.c
 )
 
-set(SOURCE_LIBRARY sig_lib)
+set(SOURCE_LIBRARY ass_lib)
 
 add_library(${SOURCE_LIBRARY} ${ASS_SOURCES})
 
@@ -42,7 +43,7 @@ target_compile_options(${SOURCE_LIBRARY} PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_OPTIO
 target_compile_options(${SOURCE_LIBRARY} PUBLIC "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>")
 target_compile_definitions(${SOURCE_LIBRARY} PUBLIC "$<$<CONFIG:RELEASE>:NDEBUG>")
 
-target_link_libraries(${SOURCE_LIBRARY} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${SOURCE_LIBRARY} PUBLIC OpenSSL::SSL OpenSSL::Crypto ${ImageMagick_MagickWand_LIBRARIES})
 
 target_include_directories(${SOURCE_LIBRARY} PUBLIC
     src
