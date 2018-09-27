@@ -25,39 +25,35 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(OpenSSL 1.1.0 REQUIRED)
-find_package(ImageMagick COMPONENTS MagickWand REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ImageMagick REQUIRED MagickWand)
+#find_package(ImageMagick REQUIRED)
 
-set(MAIN_SOURCE
+set(ASS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
 )
 
-set(ASS_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/image.c
-)
+add_executable(${PROJECT_NAME} ${ASS_SOURCES})
 
-set(SOURCE_LIBRARY ass_lib)
+target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>" ${ImageMagick_CFLAGS_OTHER})
+target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>" ${ImageMagick_CFLAGS_OTHER})
+target_compile_definitions(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:NDEBUG>")
 
-add_library(${SOURCE_LIBRARY} ${ASS_SOURCES})
+target_link_libraries(${PROJECT_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto ${ImageMagick_LIBRARIES})
 
-target_compile_options(${SOURCE_LIBRARY} PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>")
-target_compile_options(${SOURCE_LIBRARY} PUBLIC "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>")
-target_compile_definitions(${SOURCE_LIBRARY} PUBLIC "$<$<CONFIG:RELEASE>:NDEBUG>")
-
-target_link_libraries(${SOURCE_LIBRARY} PUBLIC OpenSSL::SSL OpenSSL::Crypto ${ImageMagick_MagickWand_LIBRARIES})
-
-target_include_directories(${SOURCE_LIBRARY} PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
     src
+    ${ImageMagick_INCLUDE_DIRS}
 )
 
-add_executable(${PROJECT_NAME} ${MAIN_SOURCE})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SOURCE_LIBRARY})
+message(STATUS ${ImageMagick_INCLUDE_DIRS})
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT error)
 
 if(ipo_supported)
     message(STATUS "IPO / LTO enabled")
-    set_target_properties(${SOURCE_LIBRARY} ${PROJECT_NAME} PROPERTIES 
+    set_target_properties(${PROJECT_NAME} PROPERTIES 
         INTERPROCEDURAL_OPTIMIZATION TRUE 
         POSITION_INDEPENDENT_CODE TRUE
     )
