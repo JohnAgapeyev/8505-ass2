@@ -1,5 +1,6 @@
 #include <MagickWand/MagickWand.h>
 #include <assert.h>
+#include <math.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -149,56 +150,283 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
 }
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
+    if (argc != 4) {
         printf("Usage: %s image thumbnail\n", argv[0]);
         exit(EXIT_SUCCESS);
     }
-    MagickWandGenesis();
-    MagickWand* magick_wand = NewMagickWand();
-    if (!magick_wand) {
-        ThrowWandException(magick_wand);
-    }
-    MagickBooleanType status = MagickReadImage(magick_wand, argv[1]);
-    if (status == MagickFalse) {
-        ThrowWandException(magick_wand);
-    }
+    unsigned char key[KEY_LEN];
 
-    PixelIterator* iterator = NewPixelIterator(magick_wand);
-    if (!iterator) {
-        ThrowWandException(magick_wand);
-    }
-    int x;
-    int y;
-    PixelWand** pixels;
-    PixelInfo pixel;
-    for (y = 0; y < (long) MagickGetImageHeight(magick_wand); y++) {
-        size_t width;
-        pixels = PixelGetNextIteratorRow(iterator, &width);
-        if (!pixels) {
-            break;
+    memset(key, 0xab, KEY_LEN);
+
+    size_t byte_count = 0;
+    size_t bit_count = 0;
+
+    bool data_done = false;
+
+    if (strcmp(argv[3], "d") == 0) {
+        unsigned char buffer[100];
+        memset(buffer, 0, 100);
+
+        MagickWandGenesis();
+        MagickWand* magick_wand = NewMagickWand();
+        if (!magick_wand) {
+            ThrowWandException(magick_wand);
         }
-        for (x = 0; x < (long) width; x++) {
-            PixelGetMagickColor(pixels[x], &pixel);
-            pixel.red = SigmoidalContrast(pixel.red);
-            pixel.green = SigmoidalContrast(pixel.green);
-            pixel.blue = SigmoidalContrast(pixel.blue);
-            pixel.index = SigmoidalContrast(pixel.index);
-            PixelSetPixelColor(pixels[x], &pixel);
+        MagickBooleanType status = MagickReadImage(magick_wand, argv[1]);
+        if (status == MagickFalse) {
+            ThrowWandException(magick_wand);
         }
-        PixelSyncIterator(iterator);
-    }
-    if (y < (long) MagickGetImageHeight(magick_wand)) {
-        ThrowWandException(magick_wand);
-    }
-    status = MagickWriteImages(magick_wand, argv[2], MagickTrue);
-    if (status == MagickFalse) {
-        ThrowWandException(magick_wand);
-    }
 
-    iterator = DestroyPixelIterator(iterator);
-    magick_wand = DestroyMagickWand(magick_wand);
+        PixelIterator* iterator = NewPixelIterator(magick_wand);
+        if (!iterator) {
+            ThrowWandException(magick_wand);
+        }
+        int x;
+        int y;
+        PixelWand** pixels;
+        PixelInfo pixel;
+        uint32_t data_len = 0;
+        for (y = 0; y < (long) MagickGetImageHeight(magick_wand); y++) {
+            size_t width;
+            pixels = PixelGetNextIteratorRow(iterator, &width);
+            if (!pixels) {
+                break;
+            }
+            if (data_done) {
+                break;
+            }
+            for (x = 0; x < (long) width; x++) {
+                PixelGetMagickColor(pixels[x], &pixel);
 
-    MagickWandTerminus();
+                if (fmod(pixel.red, 2.f)) {
+                    //Pixel is 1
+                    buffer[byte_count] |= (1 << bit_count);
+                } else {
+                    //Pixel is 0
+                    buffer[byte_count] &= ~(1 << bit_count);
+                }
 
+                if (bit_count == 7) {
+                    ++byte_count;
+                    if (byte_count > 3 && data_len == 0) {
+                        memcpy(&data_len, buffer, sizeof(uint32_t));
+                        printf("Size %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+                    }
+                    if (byte_count > 3 && byte_count >= data_len) {
+                        data_done = true;
+                        break;
+                    }
+                }
+                bit_count = (bit_count + 1) % 8;
+
+                printf("Decoding %lu %lu\n", byte_count, bit_count);
+
+                if (fmod(pixel.green, 2.f)) {
+                    //Pixel is 1
+                    buffer[byte_count] |= (1 << bit_count);
+                } else {
+                    //Pixel is 0
+                    buffer[byte_count] &= ~(1 << bit_count);
+                }
+
+                if (bit_count == 7) {
+                    ++byte_count;
+                    if (byte_count > 3 && data_len == 0) {
+                        memcpy(&data_len, buffer, sizeof(uint32_t));
+                        printf("Size %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+                    }
+                    if (byte_count > 3 && byte_count >= data_len) {
+                        data_done = true;
+                        break;
+                    }
+                }
+                bit_count = (bit_count + 1) % 8;
+
+                printf("Decoding %lu %lu\n", byte_count, bit_count);
+                if (fmod(pixel.blue, 2.f)) {
+                    //Pixel is 1
+                    buffer[byte_count] |= (1 << bit_count);
+                } else {
+                    //Pixel is 0
+                    buffer[byte_count] &= ~(1 << bit_count);
+                }
+
+                if (bit_count == 7) {
+                    ++byte_count;
+                    if (byte_count > 3 && data_len == 0) {
+                        memcpy(&data_len, buffer, sizeof(uint32_t));
+                        printf("Size %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+                    }
+                    if (byte_count > 3 && byte_count >= data_len) {
+                        data_done = true;
+                        break;
+                    }
+                }
+                bit_count = (bit_count + 1) % 8;
+                printf("Decoding %lu %lu\n", byte_count, bit_count);
+
+                //pixel.index = SigmoidalContrast(pixel.index);
+                PixelSetPixelColor(pixels[x], &pixel);
+            }
+            PixelSyncIterator(iterator);
+        }
+        if (y < (long) MagickGetImageHeight(magick_wand)) {
+            ThrowWandException(magick_wand);
+        }
+        status = MagickWriteImages(magick_wand, argv[2], MagickTrue);
+        if (status == MagickFalse) {
+            ThrowWandException(magick_wand);
+        }
+
+        iterator = DestroyPixelIterator(iterator);
+        magick_wand = DestroyMagickWand(magick_wand);
+
+        printf("Data message %s\n", buffer);
+
+        MagickWandTerminus();
+    } else {
+        const char* test_message = "This is my stego call";
+        unsigned char* ciphertext = encrypt_data(
+                (const unsigned char*) test_message, strlen(test_message), key, NULL, 0);
+
+        printf("Size %02x%02x%02x%02x\n", ciphertext[0], ciphertext[1], ciphertext[2], ciphertext[3]);
+
+        MagickWandGenesis();
+        MagickWand* magick_wand = NewMagickWand();
+        if (!magick_wand) {
+            ThrowWandException(magick_wand);
+        }
+        MagickBooleanType status = MagickReadImage(magick_wand, argv[1]);
+        if (status == MagickFalse) {
+            ThrowWandException(magick_wand);
+        }
+
+        PixelIterator* iterator = NewPixelIterator(magick_wand);
+        if (!iterator) {
+            ThrowWandException(magick_wand);
+        }
+        int x;
+        int y;
+        PixelWand** pixels;
+        PixelInfo pixel;
+        for (y = 0; y < (long) MagickGetImageHeight(magick_wand); y++) {
+            size_t width;
+            pixels = PixelGetNextIteratorRow(iterator, &width);
+            if (!pixels) {
+                break;
+            }
+            if (data_done) {
+                break;
+            }
+            for (x = 0; x < (long) width; x++) {
+                PixelGetMagickColor(pixels[x], &pixel);
+
+                if (!!(ciphertext[byte_count] & (1 << bit_count))) {
+                    if (fmod(pixel.red, 2.f)) {
+                        //Data is 1, pixel is 1
+                        //Do nothing
+                    } else {
+                        //Data is 1, pixel is 0
+                        //increment
+                        ++pixel.red;
+                    }
+                } else {
+                    if (fmod(pixel.red, 2.f)) {
+                        //Data is 0, pixel is 1
+                        //increment
+                        ++pixel.red;
+                    } else {
+                        //Data is 0, pixel is 0
+                        //Do nothing
+                    }
+                }
+
+                if (bit_count == 7) {
+                    ++byte_count;
+                    if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
+                        data_done = true;
+                        break;
+                    }
+                }
+                bit_count = (bit_count + 1) % 8;
+                printf("Encoding %lu %lu\n", byte_count, bit_count);
+
+                if (!!(ciphertext[byte_count] & (1 << bit_count))) {
+                    if (fmod(pixel.green, 2.f)) {
+                        //Data is 1, pixel is 1
+                        //Do nothing
+                    } else {
+                        //Data is 1, pixel is 0
+                        //increment
+                        ++pixel.green;
+                    }
+                } else {
+                    if (fmod(pixel.green, 2.f)) {
+                        //Data is 0, pixel is 1
+                        //increment
+                        ++pixel.green;
+                    } else {
+                        //Data is 0, pixel is 0
+                        //Do nothing
+                    }
+                }
+
+                if (bit_count == 7) {
+                    ++byte_count;
+                    if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
+                        data_done = true;
+                        break;
+                    }
+                }
+                bit_count = (bit_count + 1) % 8;
+                printf("Encoding %lu %lu\n", byte_count, bit_count);
+
+                if (!!(ciphertext[byte_count] & (1 << bit_count))) {
+                    if (fmod(pixel.blue, 2.f)) {
+                        //Data is 1, pixel is 1
+                        //Do nothing
+                    } else {
+                        //Data is 1, pixel is 0
+                        //increment
+                        ++pixel.blue;
+                    }
+                } else {
+                    if (fmod(pixel.blue, 2.f)) {
+                        //Data is 0, pixel is 1
+                        //increment
+                        ++pixel.blue;
+                    } else {
+                        //Data is 0, pixel is 0
+                        //Do nothing
+                    }
+                }
+
+                if (bit_count == 7) {
+                    ++byte_count;
+                    if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
+                        data_done = true;
+                        break;
+                    }
+                }
+                bit_count = (bit_count + 1) % 8;
+                printf("Encoding %lu %lu\n", byte_count, bit_count);
+                //pixel.index = SigmoidalContrast(pixel.index);
+                PixelSetPixelColor(pixels[x], &pixel);
+            }
+            PixelSyncIterator(iterator);
+        }
+        if (y < (long) MagickGetImageHeight(magick_wand)) {
+            ThrowWandException(magick_wand);
+        }
+        status = MagickWriteImages(magick_wand, argv[2], MagickTrue);
+        if (status == MagickFalse) {
+            ThrowWandException(magick_wand);
+        }
+
+        iterator = DestroyPixelIterator(iterator);
+        magick_wand = DestroyMagickWand(magick_wand);
+
+        MagickWandTerminus();
+    }
     return EXIT_SUCCESS;
 }
