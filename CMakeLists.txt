@@ -51,13 +51,15 @@ message(STATUS ${ImageMagick_INCLUDE_DIRS})
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT error)
 
-if(ipo_supported)
-    message(STATUS "IPO / LTO enabled")
-    set_target_properties(${PROJECT_NAME} PROPERTIES 
-        INTERPROCEDURAL_OPTIMIZATION TRUE 
-        POSITION_INDEPENDENT_CODE TRUE
-    )
-else()
-    message(STATUS "IPO / LTO not supported: <${error}>")
+if (CMAKE_BUILD_TYPE EQUAL Release)
+    if(ipo_supported)
+        message(STATUS "IPO / LTO enabled")
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            INTERPROCEDURAL_OPTIMIZATION TRUE
+            POSITION_INDEPENDENT_CODE TRUE
+        )
+    else()
+        message(STATUS "IPO / LTO not supported: <${error}>")
+    endif()
 endif()
 
