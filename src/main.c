@@ -21,7 +21,7 @@
 #define ThrowWandException(wand) \
     { \
         ExceptionType severity; \
-        char *description = MagickGetException(wand, &severity); \
+        char* description = MagickGetException(wand, &severity); \
         fprintf(stderr, "%s %s %lu %s\n", GetMagickModule(), description); \
         description = (char*) MagickRelinquishMemory(description); \
         exit(-1); \
@@ -287,12 +287,9 @@ void write_stego(const unsigned char* mesg, size_t mesg_len, const char* in_file
     if (!iterator) {
         ThrowWandException(magick_wand);
     }
-    size_t y;
-    PixelWand** pixels;
-    PixelInfo pixel;
-    for (y = 0; y < MagickGetImageHeight(magick_wand); ++y) {
+    for (size_t y = 0; y < MagickGetImageHeight(magick_wand); ++y) {
         size_t width;
-        pixels = PixelGetNextIteratorRow(iterator, &width);
+        PixelWand** pixels = PixelGetNextIteratorRow(iterator, &width);
         if (!pixels) {
             break;
         }
@@ -301,48 +298,37 @@ void write_stego(const unsigned char* mesg, size_t mesg_len, const char* in_file
             break;
         }
         for (size_t x = 0; x < width; ++x) {
+            PixelInfo pixel;
             PixelGetMagickColor(pixels[x], &pixel);
 
-            if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (((int) pixel.red) % 2)) {
-                ++pixel.red;
-            }
+            double* colour;
 
-            if (bit_count == 7) {
-                ++byte_count;
-                if (byte_count >= mesg_len + OVERHEAD_LEN) {
-                    data_done = true;
-                    PixelSetPixelColor(pixels[x], &pixel);
-                    break;
+            for (int i = 0; i < 3; ++i) {
+                switch (i) {
+                    case 0:
+                        colour = &pixel.red;
+                        break;
+                    case 1:
+                        colour = &pixel.blue;
+                        break;
+                    case 2:
+                        colour = &pixel.green;
+                        break;
                 }
-            }
-            bit_count = (bit_count + 1) % 8;
-
-            if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ ((int) pixel.blue) % 2) {
-                ++pixel.blue;
-            }
-
-            if (bit_count == 7) {
-                ++byte_count;
-                if (byte_count >= mesg_len + OVERHEAD_LEN) {
-                    data_done = true;
-                    PixelSetPixelColor(pixels[x], &pixel);
-                    break;
+                if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (((int) *colour) % 2)) {
+                    ++*colour;
                 }
-            }
-            bit_count = (bit_count + 1) % 8;
-            if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ ((int) pixel.green) % 2) {
-                ++pixel.green;
-            }
 
-            if (bit_count == 7) {
-                ++byte_count;
-                if (byte_count >= mesg_len + OVERHEAD_LEN) {
-                    data_done = true;
-                    PixelSetPixelColor(pixels[x], &pixel);
-                    break;
+                if (bit_count == 7) {
+                    ++byte_count;
+                    if (byte_count >= mesg_len + OVERHEAD_LEN) {
+                        data_done = true;
+                        PixelSetPixelColor(pixels[x], &pixel);
+                        break;
+                    }
                 }
+                bit_count = (bit_count + 1) % 8;
             }
-            bit_count = (bit_count + 1) % 8;
             PixelSetPixelColor(pixels[x], &pixel);
         }
         PixelSyncIterator(iterator);
