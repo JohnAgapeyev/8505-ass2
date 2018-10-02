@@ -176,12 +176,11 @@ unsigned char* read_stego(const char* in_filename) {
     if (!iterator) {
         ThrowWandException(magick_wand);
     }
-    int x;
-    int y;
+    size_t y;
     PixelWand** pixels;
     PixelInfo pixel;
     uint32_t data_len = 0;
-    for (y = 0; y < (long) MagickGetImageHeight(magick_wand); y++) {
+    for (y = 0; y < MagickGetImageHeight(magick_wand); ++y) {
         size_t width;
         pixels = PixelGetNextIteratorRow(iterator, &width);
         if (!pixels) {
@@ -190,7 +189,7 @@ unsigned char* read_stego(const char* in_filename) {
         if (data_done) {
             break;
         }
-        for (x = 0; x < (long) width; x++) {
+        for (size_t x = 0; x < width; ++x) {
             PixelGetMagickColor(pixels[x], &pixel);
 
             if (((int) pixel.red) % 2) {
@@ -300,11 +299,10 @@ void write_stego(const char* in_filename, const char* out_filename) {
     if (!iterator) {
         ThrowWandException(magick_wand);
     }
-    int x;
-    int y;
+    size_t y;
     PixelWand** pixels;
     PixelInfo pixel;
-    for (y = 0; y < (long) MagickGetImageHeight(magick_wand); y++) {
+    for (y = 0; y < MagickGetImageHeight(magick_wand); ++y) {
         size_t width;
         pixels = PixelGetNextIteratorRow(iterator, &width);
         if (!pixels) {
@@ -314,7 +312,7 @@ void write_stego(const char* in_filename, const char* out_filename) {
             PixelSyncIterator(iterator);
             break;
         }
-        for (x = 0; x < (long) width; x++) {
+        for (size_t x = 0; x < width; ++x) {
             PixelGetMagickColor(pixels[x], &pixel);
 
             if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (((int) pixel.red) % 2)) {
