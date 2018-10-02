@@ -199,16 +199,15 @@ int main(int argc, char** argv) {
             for (x = 0; x < (long) width; x++) {
                 PixelGetMagickColor(pixels[x], &pixel);
 
-                printf("colour %d %d %d\n", (int)pixel.red, (int)pixel.green, (int)pixel.blue);
+                printf("colour %d %d %d\n", (int) pixel.red, (int) pixel.green, (int) pixel.blue);
 
-                printf("Reading a red %d at position %lu %lu\n", ((int) pixel.red % 2), byte_count, bit_count);
+                printf("Reading a red %d at position %lu %lu\n", ((int) pixel.red % 2), byte_count,
+                        bit_count);
 
                 if (((int) pixel.red) % 2) {
-                    //printf("Reading a 1\n");
                     //Pixel is 1
                     buffer[byte_count] |= (1 << bit_count);
                 } else {
-                    //printf("Reading a 0\n");
                     //Pixel is 0
                     buffer[byte_count] &= ~(1 << bit_count);
                 }
@@ -228,15 +227,13 @@ int main(int argc, char** argv) {
                 }
                 bit_count = (bit_count + 1) % 8;
 
-                //printf("Decoding %lu %lu\n", byte_count, bit_count);
-                printf("Reading a blue %d at position %lu %lu\n", ((int) pixel.blue % 2), byte_count, bit_count);
+                printf("Reading a blue %d at position %lu %lu\n", ((int) pixel.blue % 2),
+                        byte_count, bit_count);
 
                 if (((int) pixel.blue) % 2) {
-                    //printf("Reading a 1\n");
                     //Pixel is 1
                     buffer[byte_count] |= (1 << bit_count);
                 } else {
-                    //printf("Reading a 0\n");
                     //Pixel is 0
                     buffer[byte_count] &= ~(1 << bit_count);
                 }
@@ -255,15 +252,13 @@ int main(int argc, char** argv) {
                     }
                 }
                 bit_count = (bit_count + 1) % 8;
-                printf("Reading a green %d at position %lu %lu\n", ((int) pixel.green % 2), byte_count, bit_count);
+                printf("Reading a green %d at position %lu %lu\n", ((int) pixel.green % 2),
+                        byte_count, bit_count);
 
-                //printf("Decoding %lu %lu\n", byte_count, bit_count);
                 if (((int) pixel.green) % 2) {
-                    //printf("Reading a 1\n");
                     //Pixel is 1
                     buffer[byte_count] |= (1 << bit_count);
                 } else {
-                    //printf("Reading a 0\n");
                     //Pixel is 0
                     buffer[byte_count] &= ~(1 << bit_count);
                 }
@@ -282,24 +277,14 @@ int main(int argc, char** argv) {
                     }
                 }
                 bit_count = (bit_count + 1) % 8;
-                //printf("Decoding %lu %lu\n", byte_count, bit_count);
-
-                //pixel.index = SigmoidalContrast(pixel.index);
-                //PixelSetPixelColor(pixels[x], &pixel);
             }
             PixelSyncIterator(iterator);
         }
-#if 0
-        if (y < (long) MagickGetImageHeight(magick_wand)) {
-            ThrowWandException(magick_wand);
-        }
-#endif
 
         iterator = DestroyPixelIterator(iterator);
         magick_wand = DestroyMagickWand(magick_wand);
 
-
-        unsigned char *message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
+        unsigned char* message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
         printf("Data message: ");
         for (size_t i = 0; i < data_len - OVERHEAD_LEN - 16 - 12; ++i) {
             printf("%c", message[i]);
@@ -308,20 +293,10 @@ int main(int argc, char** argv) {
 
         MagickWandTerminus();
     } else {
-        const char* test_message = "This is a test of the stegonography application with extra special sauce!";
-#if 1
+        const char* test_message
+                = "This is a test of the stegonography application with extra special sauce!";
         unsigned char* ciphertext = encrypt_data(
                 (const unsigned char*) test_message, strlen(test_message), key, NULL, 0);
-
-#else
-        unsigned char ciphertext[100];
-        uint32_t l = strlen(test_message);
-        memcpy(ciphertext, &l, sizeof(uint32_t));
-        strcpy(ciphertext + 4, test_message);
-#endif
-
-        printf("Size %02x%02x%02x%02x\n", ciphertext[0], ciphertext[1], ciphertext[2],
-                ciphertext[3]);
 
         MagickWandGenesis();
         MagickWand* magick_wand = NewMagickWand();
@@ -354,17 +329,14 @@ int main(int argc, char** argv) {
             for (x = 0; x < (long) width; x++) {
                 PixelGetMagickColor(pixels[x], &pixel);
 
-                printf("colour %d %d %d\n", (int)pixel.red, (int)pixel.green, (int)pixel.blue);
+                printf("colour %d %d %d\n", (int) pixel.red, (int) pixel.green, (int) pixel.blue);
 
-                //printf("Pre red %f %d %d\n", pixel.red, (int) pixel.red, (int)pixel.red % 2);
-                printf("Writing a red %d at position %lu %lu\n", !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
+                printf("Writing a red %d at position %lu %lu\n",
+                        !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
 
                 if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (((int) pixel.red) % 2)) {
                     ++pixel.red;
                 }
-                //printf("Red %d\n", (int)pixel.red);
-
-                //printf("Post red %f %d %d\n", pixel.red, (int) pixel.red, (int)pixel.red % 2);
 
                 if (bit_count == 7) {
                     printf("Full byte %02x\n", ciphertext[byte_count]);
@@ -376,9 +348,9 @@ int main(int argc, char** argv) {
                     }
                 }
                 bit_count = (bit_count + 1) % 8;
-                //printf("Encoding %lu %lu\n", byte_count, bit_count);
 
-                printf("Writing a blue %d at position %lu %lu\n", !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
+                printf("Writing a blue %d at position %lu %lu\n",
+                        !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
                 if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ ((int) pixel.blue) % 2) {
                     ++pixel.blue;
                 }
@@ -393,12 +365,11 @@ int main(int argc, char** argv) {
                     }
                 }
                 bit_count = (bit_count + 1) % 8;
-                //printf("Encoding %lu %lu\n", byte_count, bit_count);
-                printf("Writing a green %d at position %lu %lu\n", !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
+                printf("Writing a green %d at position %lu %lu\n",
+                        !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
                 if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ ((int) pixel.green) % 2) {
                     ++pixel.green;
                 }
-
 
                 if (bit_count == 7) {
                     printf("Full byte %02x\n", ciphertext[byte_count]);
@@ -410,17 +381,10 @@ int main(int argc, char** argv) {
                     }
                 }
                 bit_count = (bit_count + 1) % 8;
-                //printf("Encoding %lu %lu\n", byte_count, bit_count);
-                //pixel.index = SigmoidalContrast(pixel.index);
                 PixelSetPixelColor(pixels[x], &pixel);
             }
             PixelSyncIterator(iterator);
         }
-#if 0
-        if (y < (long) MagickGetImageHeight(magick_wand)) {
-            ThrowWandException(magick_wand);
-        }
-#endif
         printf("Data message: ");
         for (size_t i = 0; i < strlen(test_message) + OVERHEAD_LEN; ++i) {
             printf("%02x", ciphertext[i]);
@@ -430,7 +394,7 @@ int main(int argc, char** argv) {
         size_t dl;
         memcpy(&dl, ciphertext, 4);
 
-        unsigned char *message = decrypt_data(ciphertext + sizeof(uint32_t), dl, key, NULL, 0);
+        unsigned char* message = decrypt_data(ciphertext + sizeof(uint32_t), dl, key, NULL, 0);
         printf("%s\n", message);
 
         status = MagickWriteImages(magick_wand, argv[2], MagickTrue);
