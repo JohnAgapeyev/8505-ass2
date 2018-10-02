@@ -150,7 +150,7 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
     return plaintext;
 }
 
-unsigned char* read_stego(const char *in_filename) {
+unsigned char* read_stego(const char* in_filename) {
     unsigned char key[KEY_LEN];
 
     memset(key, 0xab, KEY_LEN);
@@ -159,7 +159,7 @@ unsigned char* read_stego(const char *in_filename) {
     size_t bit_count = 0;
 
     bool data_done = false;
-    unsigned char buffer[100];
+    unsigned char buffer[900];
     memset(buffer, 0, 100);
 
     MagickWandGenesis();
@@ -287,7 +287,7 @@ unsigned char* read_stego(const char *in_filename) {
     return message;
 }
 
-void write_stego(const char *in_filename, const char *out_filename) {
+void write_stego(const char* in_filename, const char* out_filename) {
     unsigned char key[KEY_LEN];
 
     memset(key, 0xab, KEY_LEN);
@@ -395,11 +395,13 @@ void write_stego(const char *in_filename, const char *out_filename) {
     }
     printf("\n");
 
-    size_t dl;
-    memcpy(&dl, ciphertext, 4);
-
+#if 0
     unsigned char* message = decrypt_data(ciphertext + sizeof(uint32_t), dl, key, NULL, 0);
-    printf("%s\n", message);
+    for (size_t i = 0; i < strlen(test_message); ++i) {
+        printf("%c", message[i]);
+    }
+    printf("\n");
+#endif
 
     status = MagickWriteImages(magick_wand, out_filename, MagickTrue);
     if (status == MagickFalse) {
