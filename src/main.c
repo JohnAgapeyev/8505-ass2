@@ -19,13 +19,13 @@
 #define OVERHEAD_LEN TAG_LEN + NONCE_LEN + sizeof(uint32_t)
 
 #define ThrowWandException(wand) \
-    { \
+    do { \
         ExceptionType severity; \
         char* description = MagickGetException(wand, &severity); \
         fprintf(stderr, "%s %s %lu %s\n", GetMagickModule(), description); \
         description = (char*) MagickRelinquishMemory(description); \
         exit(-1); \
-    }
+    } while(0)
 
 unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
         const unsigned char* key, const unsigned char* aad, const size_t aad_len) {
