@@ -270,7 +270,7 @@ unsigned char* read_stego(const char* in_filename) {
     return message;
 }
 
-void write_stego(const char* in_filename, const char* out_filename) {
+void write_stego(const unsigned char *mesg, size_t mesg_len, const char* in_filename, const char* out_filename) {
     unsigned char key[KEY_LEN];
 
     memset(key, 0xab, KEY_LEN);
@@ -280,10 +280,8 @@ void write_stego(const char* in_filename, const char* out_filename) {
 
     bool data_done = false;
 
-    const char* test_message
-            = "This is a test of the stegonography application with extra special sauce!";
     unsigned char* ciphertext
-            = encrypt_data((const unsigned char*) test_message, strlen(test_message), key, NULL, 0);
+            = encrypt_data(mesg, mesg_len, key, NULL, 0);
 
     MagickWandGenesis();
     MagickWand* magick_wand = NewMagickWand();
@@ -321,7 +319,7 @@ void write_stego(const char* in_filename, const char* out_filename) {
 
             if (bit_count == 7) {
                 ++byte_count;
-                if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
+                if (byte_count >= mesg_len + OVERHEAD_LEN) {
                     data_done = true;
                     PixelSetPixelColor(pixels[x], &pixel);
                     break;
@@ -335,7 +333,7 @@ void write_stego(const char* in_filename, const char* out_filename) {
 
             if (bit_count == 7) {
                 ++byte_count;
-                if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
+                if (byte_count >= mesg_len + OVERHEAD_LEN) {
                     data_done = true;
                     PixelSetPixelColor(pixels[x], &pixel);
                     break;
@@ -348,7 +346,7 @@ void write_stego(const char* in_filename, const char* out_filename) {
 
             if (bit_count == 7) {
                 ++byte_count;
-                if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
+                if (byte_count >= mesg_len + OVERHEAD_LEN) {
                     data_done = true;
                     PixelSetPixelColor(pixels[x], &pixel);
                     break;
@@ -360,7 +358,7 @@ void write_stego(const char* in_filename, const char* out_filename) {
         PixelSyncIterator(iterator);
     }
     printf("Data message: ");
-    for (size_t i = 0; i < strlen(test_message) + OVERHEAD_LEN; ++i) {
+    for (size_t i = 0; i < mesg_len + OVERHEAD_LEN; ++i) {
         printf("%02x", ciphertext[i]);
     }
     printf("\n");
@@ -384,7 +382,8 @@ int main(int argc, char** argv) {
     if (strcmp(argv[3], "d") == 0) {
         read_stego(argv[2]);
     } else {
-        write_stego(argv[1], argv[2]);
+        const char *test_message = "This is a test of things and stuff";
+        write_stego((const unsigned char *) test_message, strlen(test_message), argv[1], argv[2]);
     }
     return EXIT_SUCCESS;
 }
