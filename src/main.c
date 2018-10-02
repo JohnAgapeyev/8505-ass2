@@ -150,7 +150,7 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
     return plaintext;
 }
 
-unsigned char* read_stego(char** argv) {
+unsigned char* read_stego(const char *in_filename) {
     unsigned char key[KEY_LEN];
 
     memset(key, 0xab, KEY_LEN);
@@ -167,7 +167,7 @@ unsigned char* read_stego(char** argv) {
     if (!magick_wand) {
         ThrowWandException(magick_wand);
     }
-    MagickBooleanType status = MagickReadImage(magick_wand, argv[2]);
+    MagickBooleanType status = MagickReadImage(magick_wand, in_filename);
     if (status == MagickFalse) {
         ThrowWandException(magick_wand);
     }
@@ -287,7 +287,7 @@ unsigned char* read_stego(char** argv) {
     return message;
 }
 
-void write_stego(char** argv) {
+void write_stego(const char *in_filename, const char *out_filename) {
     unsigned char key[KEY_LEN];
 
     memset(key, 0xab, KEY_LEN);
@@ -307,7 +307,7 @@ void write_stego(char** argv) {
     if (!magick_wand) {
         ThrowWandException(magick_wand);
     }
-    MagickBooleanType status = MagickReadImage(magick_wand, argv[1]);
+    MagickBooleanType status = MagickReadImage(magick_wand, in_filename);
     if (status == MagickFalse) {
         ThrowWandException(magick_wand);
     }
@@ -401,7 +401,7 @@ void write_stego(char** argv) {
     unsigned char* message = decrypt_data(ciphertext + sizeof(uint32_t), dl, key, NULL, 0);
     printf("%s\n", message);
 
-    status = MagickWriteImages(magick_wand, argv[2], MagickTrue);
+    status = MagickWriteImages(magick_wand, out_filename, MagickTrue);
     if (status == MagickFalse) {
         ThrowWandException(magick_wand);
     }
@@ -418,9 +418,9 @@ int main(int argc, char** argv) {
         exit(EXIT_SUCCESS);
     }
     if (strcmp(argv[3], "d") == 0) {
-        read_stego(argv);
+        read_stego(argv[2]);
     } else {
-        write_stego(argv);
+        write_stego(argv[1], argv[2]);
     }
     return EXIT_SUCCESS;
 }
