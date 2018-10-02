@@ -17,25 +17,15 @@
 #define KEY_LEN 32
 
 #define OVERHEAD_LEN TAG_LEN + NONCE_LEN + sizeof(uint32_t)
-//#define OVERHEAD_LEN 4
-
-#define MAX_PAYLOAD 512
-#define MAX_USER_DATA MAX_PAYLOAD - OVERHEAD_LEN
 
 #define ThrowWandException(wand) \
     { \
-        char* description; \
-\
         ExceptionType severity; \
-\
-        description = MagickGetException(wand, &severity); \
-        (void) fprintf(stderr, "%s %s %lu %s\n", GetMagickModule(), description); \
+        char *description = MagickGetException(wand, &severity); \
+        fprintf(stderr, "%s %s %lu %s\n", GetMagickModule(), description); \
         description = (char*) MagickRelinquishMemory(description); \
         exit(-1); \
     }
-
-#define SigmoidalContrast(x) \
-    (QuantumRange * (1.0 / (1 + exp(10.0 * (0.5 - QuantumScale * x))) - 0.0066928509) * 1.0092503)
 
 unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
         const unsigned char* key, const unsigned char* aad, const size_t aad_len) {
@@ -270,7 +260,8 @@ unsigned char* read_stego(const char* in_filename) {
     return message;
 }
 
-void write_stego(const unsigned char *mesg, size_t mesg_len, const char* in_filename, const char* out_filename) {
+void write_stego(const unsigned char* mesg, size_t mesg_len, const char* in_filename,
+        const char* out_filename) {
     unsigned char key[KEY_LEN];
 
     memset(key, 0xab, KEY_LEN);
@@ -280,8 +271,7 @@ void write_stego(const unsigned char *mesg, size_t mesg_len, const char* in_file
 
     bool data_done = false;
 
-    unsigned char* ciphertext
-            = encrypt_data(mesg, mesg_len, key, NULL, 0);
+    unsigned char* ciphertext = encrypt_data(mesg, mesg_len, key, NULL, 0);
 
     MagickWandGenesis();
     MagickWand* magick_wand = NewMagickWand();
@@ -372,6 +362,8 @@ void write_stego(const unsigned char *mesg, size_t mesg_len, const char* in_file
     magick_wand = DestroyMagickWand(magick_wand);
 
     MagickWandTerminus();
+
+    free(ciphertext);
 }
 
 int main(int argc, char** argv) {
@@ -382,8 +374,8 @@ int main(int argc, char** argv) {
     if (strcmp(argv[3], "d") == 0) {
         read_stego(argv[2]);
     } else {
-        const char *test_message = "This is a test of things and stuff";
-        write_stego((const unsigned char *) test_message, strlen(test_message), argv[1], argv[2]);
+        const char* test_message = "This is a test of things and stuff";
+        write_stego((const unsigned char*) test_message, strlen(test_message), argv[1], argv[2]);
     }
     return EXIT_SUCCESS;
 }
