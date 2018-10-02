@@ -16,7 +16,7 @@
 #define NONCE_LEN 12
 #define KEY_LEN 32
 
-#define OVERHEAD_LEN TAG_LEN + NONCE_LEN
+#define OVERHEAD_LEN TAG_LEN + NONCE_LEN + sizeof(uint32_t)
 //#define OVERHEAD_LEN 4
 
 #define MAX_PAYLOAD 512
@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
                         printf("Size 0 %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2],
                                 buffer[3]);
                     }
-                    if (byte_count > 3 && byte_count >= data_len) {
+                    if (byte_count > 3 && byte_count >= data_len + 4) {
                         data_done = true;
                         break;
                     }
@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
                         printf("Size 1 %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2],
                                 buffer[3]);
                     }
-                    if (byte_count > 3 && byte_count >= data_len) {
+                    if (byte_count > 3 && byte_count >= data_len + 4) {
                         data_done = true;
                         break;
                     }
@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
                         printf("Size 2 %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2],
                                 buffer[3]);
                     }
-                    if (byte_count > 3 && byte_count >= data_len) {
+                    if (byte_count > 3 && byte_count >= data_len + 4) {
                         data_done = true;
                         break;
                     }
@@ -299,12 +299,14 @@ int main(int argc, char** argv) {
         magick_wand = DestroyMagickWand(magick_wand);
 
         printf("Data message: ");
-        for (size_t i = 0; i < data_len; ++i) {
+        for (size_t i = 0; i < data_len + 4; ++i) {
             printf("%02x", buffer[i]);
         }
         printf("\n");
 
-        //printf("Data message %s\n", buffer);
+        unsigned char *message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
+
+        printf("Data message %s\n", message);
 
         MagickWandTerminus();
     } else {
@@ -312,6 +314,7 @@ int main(int argc, char** argv) {
 #if 1
         unsigned char* ciphertext = encrypt_data(
                 (const unsigned char*) test_message, strlen(test_message), key, NULL, 0);
+
 #else
         unsigned char ciphertext[100];
         uint32_t l = strlen(test_message);
@@ -425,6 +428,12 @@ int main(int argc, char** argv) {
             printf("%02x", ciphertext[i]);
         }
         printf("\n");
+
+        size_t dl;
+        memcpy(&dl, ciphertext, 4);
+
+        unsigned char *message = decrypt_data(ciphertext + sizeof(uint32_t), dl, key, NULL, 0);
+        printf("%s\n", message);
 
         status = MagickWriteImages(magick_wand, argv[2], MagickTrue);
         if (status == MagickFalse) {
