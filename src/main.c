@@ -166,13 +166,10 @@ unsigned char* read_stego(const char* in_filename) {
     if (!iterator) {
         ThrowWandException(magick_wand);
     }
-    size_t y;
-    PixelWand** pixels;
-    PixelInfo pixel;
     uint32_t data_len = 0;
-    for (y = 0; y < MagickGetImageHeight(magick_wand); ++y) {
+    for (size_t y = 0; y < MagickGetImageHeight(magick_wand); ++y) {
         size_t width;
-        pixels = PixelGetNextIteratorRow(iterator, &width);
+        PixelWand** pixels = PixelGetNextIteratorRow(iterator, &width);
         if (!pixels) {
             break;
         }
@@ -180,69 +177,44 @@ unsigned char* read_stego(const char* in_filename) {
             break;
         }
         for (size_t x = 0; x < width; ++x) {
+            PixelInfo pixel;
             PixelGetMagickColor(pixels[x], &pixel);
 
-            if (((int) pixel.red) % 2) {
-                //Pixel is 1
-                buffer[byte_count] |= (1 << bit_count);
-            } else {
-                //Pixel is 0
-                buffer[byte_count] &= ~(1 << bit_count);
-            }
+            double* colour;
 
-            if (bit_count == 7) {
-                ++byte_count;
-                if (byte_count > 3 && data_len == 0) {
-                    memcpy(&data_len, buffer, sizeof(uint32_t));
+            for (int i = 0; i < 3; ++i) {
+                switch (i) {
+                    case 0:
+                        colour = &pixel.red;
+                        break;
+                    case 1:
+                        colour = &pixel.blue;
+                        break;
+                    case 2:
+                        colour = &pixel.green;
+                        break;
                 }
-                if (byte_count > 3 && byte_count >= data_len + 4) {
-                    data_done = true;
-                    break;
+                if (((int) *colour) % 2) {
+                    //Pixel is 1
+                    buffer[byte_count] |= (1 << bit_count);
+                } else {
+                    //Pixel is 0
+                    buffer[byte_count] &= ~(1 << bit_count);
                 }
-            }
-            bit_count = (bit_count + 1) % 8;
 
-            if (((int) pixel.blue) % 2) {
-                //Pixel is 1
-                buffer[byte_count] |= (1 << bit_count);
-            } else {
-                //Pixel is 0
-                buffer[byte_count] &= ~(1 << bit_count);
-            }
-
-            if (bit_count == 7) {
-                ++byte_count;
-                if (byte_count > 3 && data_len == 0) {
-                    memcpy(&data_len, buffer, sizeof(uint32_t));
+                if (bit_count == 7) {
+                    ++byte_count;
+                    if (byte_count > 3 && data_len == 0) {
+                        memcpy(&data_len, buffer, sizeof(uint32_t));
+                    }
+                    if (byte_count > 3 && byte_count >= data_len + 4) {
+                        data_done = true;
+                        break;
+                    }
                 }
-                if (byte_count > 3 && byte_count >= data_len + 4) {
-                    data_done = true;
-                    break;
-                }
+                bit_count = (bit_count + 1) % 8;
             }
-            bit_count = (bit_count + 1) % 8;
-
-            if (((int) pixel.green) % 2) {
-                //Pixel is 1
-                buffer[byte_count] |= (1 << bit_count);
-            } else {
-                //Pixel is 0
-                buffer[byte_count] &= ~(1 << bit_count);
-            }
-
-            if (bit_count == 7) {
-                ++byte_count;
-                if (byte_count > 3 && data_len == 0) {
-                    memcpy(&data_len, buffer, sizeof(uint32_t));
-                }
-                if (byte_count > 3 && byte_count >= data_len + 4) {
-                    data_done = true;
-                    break;
-                }
-            }
-            bit_count = (bit_count + 1) % 8;
         }
-        PixelSyncIterator(iterator);
     }
 
     iterator = DestroyPixelIterator(iterator);
