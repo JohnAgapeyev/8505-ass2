@@ -193,11 +193,6 @@ unsigned char* read_stego(const char* in_filename) {
         for (x = 0; x < (long) width; x++) {
             PixelGetMagickColor(pixels[x], &pixel);
 
-            printf("colour %d %d %d\n", (int) pixel.red, (int) pixel.green, (int) pixel.blue);
-
-            printf("Reading a red %d at position %lu %lu\n", ((int) pixel.red % 2), byte_count,
-                    bit_count);
-
             if (((int) pixel.red) % 2) {
                 //Pixel is 1
                 buffer[byte_count] |= (1 << bit_count);
@@ -211,7 +206,6 @@ unsigned char* read_stego(const char* in_filename) {
                 ++byte_count;
                 if (byte_count > 3 && data_len == 0) {
                     memcpy(&data_len, buffer, sizeof(uint32_t));
-                    printf("Size 0 %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
                 }
                 if (byte_count > 3 && byte_count >= data_len + 4) {
                     data_done = true;
@@ -219,9 +213,6 @@ unsigned char* read_stego(const char* in_filename) {
                 }
             }
             bit_count = (bit_count + 1) % 8;
-
-            printf("Reading a blue %d at position %lu %lu\n", ((int) pixel.blue % 2), byte_count,
-                    bit_count);
 
             if (((int) pixel.blue) % 2) {
                 //Pixel is 1
@@ -236,7 +227,6 @@ unsigned char* read_stego(const char* in_filename) {
                 ++byte_count;
                 if (byte_count > 3 && data_len == 0) {
                     memcpy(&data_len, buffer, sizeof(uint32_t));
-                    printf("Size 1 %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
                 }
                 if (byte_count > 3 && byte_count >= data_len + 4) {
                     data_done = true;
@@ -244,8 +234,6 @@ unsigned char* read_stego(const char* in_filename) {
                 }
             }
             bit_count = (bit_count + 1) % 8;
-            printf("Reading a green %d at position %lu %lu\n", ((int) pixel.green % 2), byte_count,
-                    bit_count);
 
             if (((int) pixel.green) % 2) {
                 //Pixel is 1
@@ -260,7 +248,6 @@ unsigned char* read_stego(const char* in_filename) {
                 ++byte_count;
                 if (byte_count > 3 && data_len == 0) {
                     memcpy(&data_len, buffer, sizeof(uint32_t));
-                    printf("Size 2 %02x%02x%02x%02x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
                 }
                 if (byte_count > 3 && byte_count >= data_len + 4) {
                     data_done = true;
@@ -333,11 +320,6 @@ void write_stego(const char* in_filename, const char* out_filename) {
         for (x = 0; x < (long) width; x++) {
             PixelGetMagickColor(pixels[x], &pixel);
 
-            printf("colour %d %d %d\n", (int) pixel.red, (int) pixel.green, (int) pixel.blue);
-
-            printf("Writing a red %d at position %lu %lu\n",
-                    !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
-
             if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (((int) pixel.red) % 2)) {
                 ++pixel.red;
             }
@@ -353,8 +335,6 @@ void write_stego(const char* in_filename, const char* out_filename) {
             }
             bit_count = (bit_count + 1) % 8;
 
-            printf("Writing a blue %d at position %lu %lu\n",
-                    !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
             if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ ((int) pixel.blue) % 2) {
                 ++pixel.blue;
             }
@@ -369,8 +349,6 @@ void write_stego(const char* in_filename, const char* out_filename) {
                 }
             }
             bit_count = (bit_count + 1) % 8;
-            printf("Writing a green %d at position %lu %lu\n",
-                    !!(ciphertext[byte_count] & (1 << bit_count)), byte_count, bit_count);
             if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ ((int) pixel.green) % 2) {
                 ++pixel.green;
             }
@@ -394,14 +372,6 @@ void write_stego(const char* in_filename, const char* out_filename) {
         printf("%02x", ciphertext[i]);
     }
     printf("\n");
-
-#if 0
-    unsigned char* message = decrypt_data(ciphertext + sizeof(uint32_t), dl, key, NULL, 0);
-    for (size_t i = 0; i < strlen(test_message); ++i) {
-        printf("%c", message[i]);
-    }
-    printf("\n");
-#endif
 
     status = MagickWriteImages(magick_wand, out_filename, MagickTrue);
     if (status == MagickFalse) {
