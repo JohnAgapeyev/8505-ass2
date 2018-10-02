@@ -25,7 +25,7 @@
         fprintf(stderr, "%s %s %lu %s\n", GetMagickModule(), description); \
         description = (char*) MagickRelinquishMemory(description); \
         exit(-1); \
-    } while(0)
+    } while (0)
 
 unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
         const unsigned char* key, const unsigned char* aad, const size_t aad_len) {
@@ -150,7 +150,7 @@ unsigned char* read_stego(const char* in_filename) {
 
     bool data_done = false;
     unsigned char buffer[900];
-    memset(buffer, 0, 100);
+    memset(buffer, 0, 900);
 
     MagickWandGenesis();
     MagickWand* magick_wand = NewMagickWand();
