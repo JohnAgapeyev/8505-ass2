@@ -202,7 +202,6 @@ unsigned char* read_stego(const char* in_filename) {
             }
 
             if (bit_count == 7) {
-                printf("Full byte %02x\n", buffer[byte_count]);
                 ++byte_count;
                 if (byte_count > 3 && data_len == 0) {
                     memcpy(&data_len, buffer, sizeof(uint32_t));
@@ -223,7 +222,6 @@ unsigned char* read_stego(const char* in_filename) {
             }
 
             if (bit_count == 7) {
-                printf("Full byte %02x\n", buffer[byte_count]);
                 ++byte_count;
                 if (byte_count > 3 && data_len == 0) {
                     memcpy(&data_len, buffer, sizeof(uint32_t));
@@ -244,7 +242,6 @@ unsigned char* read_stego(const char* in_filename) {
             }
 
             if (bit_count == 7) {
-                printf("Full byte %02x\n", buffer[byte_count]);
                 ++byte_count;
                 if (byte_count > 3 && data_len == 0) {
                     memcpy(&data_len, buffer, sizeof(uint32_t));
@@ -325,7 +322,6 @@ void write_stego(const char* in_filename, const char* out_filename) {
             }
 
             if (bit_count == 7) {
-                printf("Full byte %02x\n", ciphertext[byte_count]);
                 ++byte_count;
                 if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
                     data_done = true;
@@ -340,7 +336,6 @@ void write_stego(const char* in_filename, const char* out_filename) {
             }
 
             if (bit_count == 7) {
-                printf("Full byte %02x\n", ciphertext[byte_count]);
                 ++byte_count;
                 if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
                     data_done = true;
@@ -354,7 +349,6 @@ void write_stego(const char* in_filename, const char* out_filename) {
             }
 
             if (bit_count == 7) {
-                printf("Full byte %02x\n", ciphertext[byte_count]);
                 ++byte_count;
                 if (byte_count >= strlen(test_message) + OVERHEAD_LEN) {
                     data_done = true;
