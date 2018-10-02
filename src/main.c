@@ -298,19 +298,17 @@ int main(int argc, char** argv) {
         iterator = DestroyPixelIterator(iterator);
         magick_wand = DestroyMagickWand(magick_wand);
 
+
+        unsigned char *message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
         printf("Data message: ");
-        for (size_t i = 0; i < data_len + 4; ++i) {
-            printf("%02x", buffer[i]);
+        for (size_t i = 0; i < data_len - OVERHEAD_LEN - 16 - 12; ++i) {
+            printf("%c", message[i]);
         }
         printf("\n");
 
-        unsigned char *message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
-
-        printf("Data message %s\n", message);
-
         MagickWandTerminus();
     } else {
-        const char* test_message = "test123";
+        const char* test_message = "This is a test of the stegonography application with extra special sauce!";
 #if 1
         unsigned char* ciphertext = encrypt_data(
                 (const unsigned char*) test_message, strlen(test_message), key, NULL, 0);
