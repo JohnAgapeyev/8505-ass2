@@ -1,5 +1,6 @@
 #include <MagickWand/MagickWand.h>
 #include <assert.h>
+#include <getopt.h>
 #include <math.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
@@ -324,16 +325,74 @@ void write_stego(const unsigned char* mesg, size_t mesg_len, const char* in_file
     free(ciphertext);
 }
 
+#define usage()\
+    do {\
+        printf("Usage: 8505-ass2 input-file output-file mode [cipher]\n");\
+     } while(0)
+
 int main(int argc, char** argv) {
-    if (argc != 4) {
-        printf("Usage: %s image thumbnail\n", argv[0]);
-        exit(EXIT_SUCCESS);
+    int choice;
+    const char *input_filename = NULL;
+    const char *output_filename = NULL;
+    const char *data_filename = NULL;
+    const char *mode = NULL;
+    bool is_encrypt = false;
+    for (;;) {
+        static struct option long_options[] = {
+            {"help", no_argument, 0, 'h'},
+                {"input", required_argument, 0, 'i'},
+                {"output", required_argument, 0, 'o'},
+                {"mode", required_argument, 0, 'm'},
+                {"data", required_argument, 0, 'd'},
+                {0, 0, 0, 0}};
+
+        int option_index = 0;
+        if ((choice = getopt_long(argc, argv, "hi:o:m:d:", long_options, &option_index)) == -1) {
+            break;
+        }
+
+        switch (choice) {
+            case 'i':
+                input_filename = optarg;
+                break;
+            case 'o':
+                output_filename = optarg;
+                break;
+            case 'm':
+                mode = optarg;
+                break;
+            case 'd':
+                data_filename = optarg;
+                break;
+            case 'h':
+            case '?':
+            default:
+                usage();
+                return EXIT_FAILURE;
+        }
     }
-    if (strcmp(argv[3], "d") == 0) {
-        read_stego(argv[2]);
+    if (!input_filename || !mode || !data_filename) {
+        usage();
+        return EXIT_FAILURE;
+    }
+    if (strcmp(mode, "e") == 0) {
+        is_encrypt = true;
+    } else if (strcmp(mode, "d") == 0) {
+        is_encrypt = false;
     } else {
+        usage();
+        return EXIT_FAILURE;
+    }
+    if (is_encrypt && !output_filename) {
+        usage();
+        return EXIT_FAILURE;
+    }
+
+    if (is_encrypt) {
         const char* test_message = "This is a test of things and stuff";
-        write_stego((const unsigned char*) test_message, strlen(test_message), argv[1], argv[2]);
+        write_stego(input_filename, output_filename, data_filename);
+    } else {
+        read_stego(input_filename, data_filename);
     }
     return EXIT_SUCCESS;
 }
