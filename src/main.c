@@ -143,7 +143,7 @@ unsigned char* read_stego(const char* in_filename, const char* data_filename) {
     size_t byte_count = 0;
     size_t bit_count = 0;
 
-    unsigned char *buffer = calloc(1ul << 20, 1);
+    unsigned char* buffer = calloc(1ul << 20, 1);
 
     uint32_t data_len = 0;
 
@@ -172,11 +172,18 @@ unsigned char* read_stego(const char* in_filename, const char* data_filename) {
     }
 
     unsigned char* message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
-    printf("Data message: ");
-    for (size_t i = 0; i < data_len - OVERHEAD_LEN - 16 - 12; ++i) {
-        printf("%c", message[i]);
+
+    if (data_filename) {
+        FILE* f = fopen(data_filename, "wb");
+        fwrite(message, data_len - OVERHEAD_LEN - 16 - 12, 1, f);
+        fclose(f);
+    } else {
+        printf("Data message: ");
+        for (size_t i = 0; i < data_len - OVERHEAD_LEN - 16 - 12; ++i) {
+            printf("%c", message[i]);
+        }
+        printf("\n");
     }
-    printf("\n");
 
     stbi_image_free(data);
 
@@ -275,7 +282,7 @@ int main(int argc, char** argv) {
                 return EXIT_FAILURE;
         }
     }
-    if (!input_filename || !mode || !data_filename) {
+    if (!input_filename || !mode) {
         usage();
         return EXIT_FAILURE;
     }
@@ -287,7 +294,7 @@ int main(int argc, char** argv) {
         usage();
         return EXIT_FAILURE;
     }
-    if (is_encrypt && !output_filename) {
+    if (is_encrypt && !output_filename && !data_filename) {
         usage();
         return EXIT_FAILURE;
     }
