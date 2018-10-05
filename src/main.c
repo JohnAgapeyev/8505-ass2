@@ -1,4 +1,3 @@
-#include <MagickWand/MagickWand.h>
 #include <assert.h>
 #include <getopt.h>
 #include <math.h>
@@ -12,21 +11,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 #define TAG_LEN 16
 #define NONCE_LEN 12
 #define KEY_LEN 32
 
 #define OVERHEAD_LEN TAG_LEN + NONCE_LEN + sizeof(uint32_t)
-
-#define ThrowWandException(wand) \
-    do { \
-        ExceptionType severity; \
-        char* description = MagickGetException(wand, &severity); \
-        fprintf(stderr, "%s %s %lu %s\n", GetMagickModule(), description); \
-        description = (char*) MagickRelinquishMemory(description); \
-        exit(-1); \
-    } while (0)
 
 unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
         const unsigned char* key, const unsigned char* aad, const size_t aad_len) {
@@ -141,7 +135,7 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
     return plaintext;
 }
 
-unsigned char* read_stego(const char* in_filename) {
+unsigned char* read_stego(const char* in_filename, const char* data_filename) {
     unsigned char key[KEY_LEN];
 
     memset(key, 0xab, KEY_LEN);
@@ -149,77 +143,33 @@ unsigned char* read_stego(const char* in_filename) {
     size_t byte_count = 0;
     size_t bit_count = 0;
 
-    bool data_done = false;
-    unsigned char buffer[900];
-    memset(buffer, 0, 900);
+    unsigned char *buffer = calloc(1ul << 20, 1);
 
-    MagickWandGenesis();
-    MagickWand* magick_wand = NewMagickWand();
-    if (!magick_wand) {
-        ThrowWandException(magick_wand);
-    }
-    MagickBooleanType status = MagickReadImage(magick_wand, in_filename);
-    if (status == MagickFalse) {
-        ThrowWandException(magick_wand);
-    }
-
-    PixelIterator* iterator = NewPixelIterator(magick_wand);
-    if (!iterator) {
-        ThrowWandException(magick_wand);
-    }
     uint32_t data_len = 0;
-    for (size_t y = 0; y < MagickGetImageHeight(magick_wand); ++y) {
-        size_t width;
-        PixelWand** pixels = PixelGetNextIteratorRow(iterator, &width);
-        if (!pixels) {
-            break;
+
+    int x, y, n;
+    unsigned char* data = stbi_load(in_filename, &x, &y, &n, 3);
+
+    for (int i = 0; i < x * y * n; ++i) {
+        if (data[i] % 2) {
+            //Pixel is 1
+            buffer[byte_count] |= (1 << bit_count);
+        } else {
+            //Pixel is 0
+            buffer[byte_count] &= ~(1 << bit_count);
         }
-        if (data_done) {
-            break;
-        }
-        for (size_t x = 0; x < width; ++x) {
-            PixelInfo pixel;
-            PixelGetMagickColor(pixels[x], &pixel);
 
-            double* colour;
-
-            for (int i = 0; i < 3; ++i) {
-                switch (i) {
-                    case 0:
-                        colour = &pixel.red;
-                        break;
-                    case 1:
-                        colour = &pixel.blue;
-                        break;
-                    case 2:
-                        colour = &pixel.green;
-                        break;
-                }
-                if (((int) *colour) % 2) {
-                    //Pixel is 1
-                    buffer[byte_count] |= (1 << bit_count);
-                } else {
-                    //Pixel is 0
-                    buffer[byte_count] &= ~(1 << bit_count);
-                }
-
-                if (bit_count == 7) {
-                    ++byte_count;
-                    if (byte_count > 3 && data_len == 0) {
-                        memcpy(&data_len, buffer, sizeof(uint32_t));
-                    }
-                    if (byte_count > 3 && byte_count >= data_len + 4) {
-                        data_done = true;
-                        break;
-                    }
-                }
-                bit_count = (bit_count + 1) % 8;
+        if (bit_count == 7) {
+            ++byte_count;
+            if (byte_count > 3 && data_len == 0) {
+                memcpy(&data_len, buffer, sizeof(uint32_t));
+            }
+            if (byte_count > 3 && byte_count >= data_len + 4) {
+                break;
             }
         }
+        bit_count = (bit_count + 1) % 8;
     }
-
-    iterator = DestroyPixelIterator(iterator);
-    magick_wand = DestroyMagickWand(magick_wand);
 
     unsigned char* message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
     printf("Data message: ");
@@ -228,13 +178,23 @@ unsigned char* read_stego(const char* in_filename) {
     }
     printf("\n");
 
-    MagickWandTerminus();
+    stbi_image_free(data);
 
     return message;
 }
 
-void write_stego(const unsigned char* mesg, size_t mesg_len, const char* in_filename,
-        const char* out_filename) {
+void write_stego(const char* in_filename, const char* out_filename, const char* data_filename) {
+    FILE* f = fopen(data_filename, "rb");
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    rewind(f);
+
+    unsigned char* mesg = malloc(fsize);
+    fread(mesg, fsize, 1, f);
+    fclose(f);
+
+    size_t mesg_len = fsize;
+
     unsigned char key[KEY_LEN];
 
     memset(key, 0xab, KEY_LEN);
@@ -242,69 +202,23 @@ void write_stego(const unsigned char* mesg, size_t mesg_len, const char* in_file
     size_t byte_count = 0;
     size_t bit_count = 0;
 
-    bool data_done = false;
-
     unsigned char* ciphertext = encrypt_data(mesg, mesg_len, key, NULL, 0);
 
-    MagickWandGenesis();
-    MagickWand* magick_wand = NewMagickWand();
-    if (!magick_wand) {
-        ThrowWandException(magick_wand);
-    }
-    MagickBooleanType status = MagickReadImage(magick_wand, in_filename);
-    if (status == MagickFalse) {
-        ThrowWandException(magick_wand);
-    }
+    int x, y, n;
+    unsigned char* data = stbi_load(in_filename, &x, &y, &n, 3);
 
-    PixelIterator* iterator = NewPixelIterator(magick_wand);
-    if (!iterator) {
-        ThrowWandException(magick_wand);
-    }
-    for (size_t y = 0; y < MagickGetImageHeight(magick_wand); ++y) {
-        size_t width;
-        PixelWand** pixels = PixelGetNextIteratorRow(iterator, &width);
-        if (!pixels) {
-            break;
+    for (int i = 0; i < x * y * n; ++i) {
+        if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (data[i] % 2)) {
+            ++data[i];
         }
-        if (data_done) {
-            PixelSyncIterator(iterator);
-            break;
-        }
-        for (size_t x = 0; x < width; ++x) {
-            PixelInfo pixel;
-            PixelGetMagickColor(pixels[x], &pixel);
 
-            double* colour;
-
-            for (int i = 0; i < 3; ++i) {
-                switch (i) {
-                    case 0:
-                        colour = &pixel.red;
-                        break;
-                    case 1:
-                        colour = &pixel.blue;
-                        break;
-                    case 2:
-                        colour = &pixel.green;
-                        break;
-                }
-                if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (((int) *colour) % 2)) {
-                    ++*colour;
-                }
-
-                if (bit_count == 7) {
-                    ++byte_count;
-                    if (byte_count >= mesg_len + OVERHEAD_LEN) {
-                        data_done = true;
-                        PixelSetPixelColor(pixels[x], &pixel);
-                        break;
-                    }
-                }
-                bit_count = (bit_count + 1) % 8;
+        if (bit_count == 7) {
+            ++byte_count;
+            if (byte_count >= mesg_len + OVERHEAD_LEN) {
+                break;
             }
-            PixelSetPixelColor(pixels[x], &pixel);
         }
-        PixelSyncIterator(iterator);
+        bit_count = (bit_count + 1) % 8;
     }
     printf("Data message: ");
     for (size_t i = 0; i < mesg_len + OVERHEAD_LEN; ++i) {
@@ -312,39 +226,29 @@ void write_stego(const unsigned char* mesg, size_t mesg_len, const char* in_file
     }
     printf("\n");
 
-    status = MagickWriteImages(magick_wand, out_filename, MagickTrue);
-    if (status == MagickFalse) {
-        ThrowWandException(magick_wand);
-    }
-
-    iterator = DestroyPixelIterator(iterator);
-    magick_wand = DestroyMagickWand(magick_wand);
-
-    MagickWandTerminus();
+    stbi_write_png(out_filename, x, y, n, data, x * n);
+    stbi_image_free(data);
 
     free(ciphertext);
 }
 
-#define usage()\
-    do {\
-        printf("Usage: 8505-ass2 input-file output-file mode [cipher]\n");\
-     } while(0)
+#define usage() \
+    do { \
+        printf("Usage: 8505-ass2 input-file output-file mode [cipher]\n"); \
+    } while (0)
 
 int main(int argc, char** argv) {
     int choice;
-    const char *input_filename = NULL;
-    const char *output_filename = NULL;
-    const char *data_filename = NULL;
-    const char *mode = NULL;
+    const char* input_filename = NULL;
+    const char* output_filename = NULL;
+    const char* data_filename = NULL;
+    const char* mode = NULL;
     bool is_encrypt = false;
     for (;;) {
-        static struct option long_options[] = {
-            {"help", no_argument, 0, 'h'},
-                {"input", required_argument, 0, 'i'},
-                {"output", required_argument, 0, 'o'},
-                {"mode", required_argument, 0, 'm'},
-                {"data", required_argument, 0, 'd'},
-                {0, 0, 0, 0}};
+        static struct option long_options[]
+                = {{"help", no_argument, 0, 'h'}, {"input", required_argument, 0, 'i'},
+                        {"output", required_argument, 0, 'o'}, {"mode", required_argument, 0, 'm'},
+                        {"data", required_argument, 0, 'd'}, {0, 0, 0, 0}};
 
         int option_index = 0;
         if ((choice = getopt_long(argc, argv, "hi:o:m:d:", long_options, &option_index)) == -1) {
@@ -371,8 +275,7 @@ int main(int argc, char** argv) {
                 return EXIT_FAILURE;
         }
     }
-    //if (!input_filename || !mode || !data_filename) {
-    if (!input_filename || !mode) {
+    if (!input_filename || !mode || !data_filename) {
         usage();
         return EXIT_FAILURE;
     }
@@ -390,10 +293,9 @@ int main(int argc, char** argv) {
     }
 
     if (is_encrypt) {
-        const char* test_message = "This is a test of things and stuff";
-        write_stego((const unsigned char *) test_message, strlen(test_message), input_filename, output_filename);
+        write_stego(input_filename, output_filename, data_filename);
     } else {
-        read_stego(input_filename);
+        read_stego(input_filename, data_filename);
     }
     return EXIT_SUCCESS;
 }
