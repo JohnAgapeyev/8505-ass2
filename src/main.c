@@ -371,7 +371,8 @@ int main(int argc, char** argv) {
                 return EXIT_FAILURE;
         }
     }
-    if (!input_filename || !mode || !data_filename) {
+    //if (!input_filename || !mode || !data_filename) {
+    if (!input_filename || !mode) {
         usage();
         return EXIT_FAILURE;
     }
@@ -390,9 +391,9 @@ int main(int argc, char** argv) {
 
     if (is_encrypt) {
         const char* test_message = "This is a test of things and stuff";
-        write_stego(input_filename, output_filename, data_filename);
+        write_stego((const unsigned char *) test_message, strlen(test_message), input_filename, output_filename);
     } else {
-        read_stego(input_filename, data_filename);
+        read_stego(input_filename);
     }
     return EXIT_SUCCESS;
 }
