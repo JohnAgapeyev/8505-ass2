@@ -135,10 +135,14 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
     return plaintext;
 }
 
-unsigned char* read_stego(const char* in_filename, const char* data_filename) {
-    unsigned char key[KEY_LEN];
+unsigned char *password_key_derive(const char *password) {
+    unsigned char *key = malloc(KEY_LEN);
+    PKCS5_PBKDF2_HMAC(password, strlen(password), NULL, 0, 100000, EVP_sha256(), KEY_LEN, key);
+    return key;
+}
 
-    memset(key, 0xab, KEY_LEN);
+unsigned char* read_stego(const char* in_filename, const char* data_filename, const char *password) {
+    unsigned char *key = password_key_derive(password);
 
     size_t byte_count = 0;
     size_t bit_count = 0;
@@ -187,10 +191,12 @@ unsigned char* read_stego(const char* in_filename, const char* data_filename) {
 
     stbi_image_free(data);
 
+    free(key);
+
     return message;
 }
 
-void write_stego(const char* in_filename, const char* out_filename, const char* data_filename) {
+void write_stego(const char* in_filename, const char* out_filename, const char* data_filename, const char *password) {
     FILE* f = fopen(data_filename, "rb");
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
@@ -202,9 +208,7 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
 
     size_t mesg_len = fsize;
 
-    unsigned char key[KEY_LEN];
-
-    memset(key, 0xab, KEY_LEN);
+    unsigned char *key = password_key_derive(password);
 
     size_t byte_count = 0;
     size_t bit_count = 0;
@@ -237,6 +241,7 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
     stbi_image_free(data);
 
     free(ciphertext);
+    free(key);
 }
 
 #define usage() \
@@ -250,15 +255,18 @@ int main(int argc, char** argv) {
     const char* output_filename = NULL;
     const char* data_filename = NULL;
     const char* mode = NULL;
+    const char* password = NULL;
     bool is_encrypt = false;
     for (;;) {
         static struct option long_options[]
                 = {{"help", no_argument, 0, 'h'}, {"input", required_argument, 0, 'i'},
                         {"output", required_argument, 0, 'o'}, {"mode", required_argument, 0, 'm'},
-                        {"data", required_argument, 0, 'd'}, {0, 0, 0, 0}};
+                        {"data", required_argument, 0, 'd'},
+                        {"password", required_argument, 0, 'p'},
+                        {0, 0, 0, 0}};
 
         int option_index = 0;
-        if ((choice = getopt_long(argc, argv, "hi:o:m:d:", long_options, &option_index)) == -1) {
+        if ((choice = getopt_long(argc, argv, "hi:o:m:d:p:", long_options, &option_index)) == -1) {
             break;
         }
 
@@ -275,6 +283,9 @@ int main(int argc, char** argv) {
             case 'd':
                 data_filename = optarg;
                 break;
+            case 'p':
+                password = optarg;
+                break;
             case 'h':
             case '?':
             default:
@@ -282,7 +293,7 @@ int main(int argc, char** argv) {
                 return EXIT_FAILURE;
         }
     }
-    if (!input_filename || !mode) {
+    if (!input_filename || !mode || !password) {
         usage();
         return EXIT_FAILURE;
     }
@@ -300,9 +311,9 @@ int main(int argc, char** argv) {
     }
 
     if (is_encrypt) {
-        write_stego(input_filename, output_filename, data_filename);
+        write_stego(input_filename, output_filename, data_filename, password);
     } else {
-        read_stego(input_filename, data_filename);
+        read_stego(input_filename, data_filename, password);
     }
     return EXIT_SUCCESS;
 }
