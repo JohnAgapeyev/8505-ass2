@@ -176,6 +176,9 @@ unsigned char* read_stego(const char* in_filename, const char* data_filename, co
     }
 
     unsigned char* message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
+    if (!message) {
+        goto cleanup;
+    }
 
     if (data_filename) {
         FILE* f = fopen(data_filename, "wb");
@@ -189,10 +192,9 @@ unsigned char* read_stego(const char* in_filename, const char* data_filename, co
         printf("\n");
     }
 
+cleanup:
     stbi_image_free(data);
-
     free(key);
-
     return message;
 }
 
@@ -313,7 +315,9 @@ int main(int argc, char** argv) {
     if (is_encrypt) {
         write_stego(input_filename, output_filename, data_filename, password);
     } else {
-        read_stego(input_filename, data_filename, password);
+        if (!read_stego(input_filename, data_filename, password)) {
+            return EXIT_FAILURE;
+        }
     }
     return EXIT_SUCCESS;
 }
