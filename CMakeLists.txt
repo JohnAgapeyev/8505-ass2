@@ -25,9 +25,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(OpenSSL 1.1.0 REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(ImageMagick REQUIRED MagickWand)
-#find_package(ImageMagick REQUIRED)
 
 set(ASS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
@@ -35,18 +32,15 @@ set(ASS_SOURCES
 
 add_executable(${PROJECT_NAME} ${ASS_SOURCES})
 
-target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>" ${ImageMagick_CFLAGS_OTHER})
-target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>" ${ImageMagick_CFLAGS_OTHER})
+target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>")
+target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>")
 target_compile_definitions(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:NDEBUG>")
 
-target_link_libraries(${PROJECT_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto ${ImageMagick_LIBRARIES} -lm -ldl)
+target_link_libraries(${PROJECT_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto -lm)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     src
-    ${ImageMagick_INCLUDE_DIRS}
 )
-
-message(STATUS ${ImageMagick_INCLUDE_DIRS})
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT error)
