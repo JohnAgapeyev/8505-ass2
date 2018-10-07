@@ -22,10 +22,162 @@
 
 #define OVERHEAD_LEN TAG_LEN + NONCE_LEN + sizeof(uint32_t)
 
+#define libcrypto_error() \
+    do { \
+        fprintf(stderr, "Libcrypto error %s at %s, line %d in function %s\n", \
+                ERR_error_string(ERR_get_error(), NULL), __FILE__, __LINE__, __func__); \
+        exit(EXIT_FAILURE); \
+    } while (0)
+
+#define checkCryptoAPICall(pred) \
+    do { \
+        if ((pred) != 1) { \
+            libcrypto_error(); \
+        } \
+    } while (0)
+
+#define nullCheckCryptoAPICall(pred) \
+    do { \
+        if ((pred) == NULL) { \
+            libcrypto_error(); \
+        } \
+    } while (0)
+
+bool use_aes = false;
+
+size_t encrypt_aead(const unsigned char* plaintext, size_t plain_len, const unsigned char* aad,
+        const size_t aad_len, const unsigned char* key, const unsigned char* iv,
+        unsigned char* ciphertext, unsigned char* tag) {
+    EVP_CIPHER_CTX* ctx;
+    nullCheckCryptoAPICall(ctx = EVP_CIPHER_CTX_new());
+
+    checkCryptoAPICall(EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL));
+
+    checkCryptoAPICall(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, NONCE_LEN, NULL));
+
+    checkCryptoAPICall(EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv));
+
+    int len;
+    checkCryptoAPICall(EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len));
+
+    len = 0;
+    checkCryptoAPICall(EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plain_len));
+
+    int ciphertextlen = len;
+    checkCryptoAPICall(EVP_EncryptFinal_ex(ctx, ciphertext + len, &len));
+
+    ciphertextlen += len;
+
+    checkCryptoAPICall(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, TAG_LEN, tag));
+
+    EVP_CIPHER_CTX_free(ctx);
+
+    assert(ciphertextlen >= 0);
+
+    return ciphertextlen;
+}
+
+ssize_t decrypt_aead(const unsigned char* ciphertext, size_t cipher_len, const unsigned char* aad,
+        const size_t aad_len, const unsigned char* key, const unsigned char* iv,
+        const unsigned char* tag, unsigned char* plaintext) {
+    printf("Nonce:\n");
+    for (int i = 0; i < NONCE_LEN; ++i) {
+        printf("%02x", iv[i]);
+    }
+    printf("\n");
+    printf("Message:\n");
+    for (unsigned long i = 0; i < cipher_len; ++i) {
+        printf("%02x", ciphertext[i]);
+    }
+    printf("\n");
+    printf("Tag:\n");
+    for (unsigned long i = 0; i < TAG_LEN; ++i) {
+        printf("%02x", tag[i]);
+    }
+    printf("\n");
+    printf("AAD:\n");
+    for (unsigned long i = 0; i < aad_len; ++i) {
+        printf("%02x", aad[i]);
+    }
+    printf("\n");
+
+    EVP_CIPHER_CTX* ctx;
+    nullCheckCryptoAPICall(ctx = EVP_CIPHER_CTX_new());
+
+    checkCryptoAPICall(EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL));
+
+    checkCryptoAPICall(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, NONCE_LEN, NULL));
+
+    checkCryptoAPICall(EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv));
+
+    int len;
+    checkCryptoAPICall(EVP_DecryptUpdate(ctx, NULL, &len, aad, aad_len));
+
+    checkCryptoAPICall(EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, cipher_len));
+
+    int plaintextlen = len;
+
+    if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, TAG_LEN, (unsigned char*) tag)) {
+        libcrypto_error();
+    }
+
+    ssize_t ret = EVP_DecryptFinal_ex(ctx, plaintext + len, &len);
+
+    plaintextlen += len;
+
+    EVP_CIPHER_CTX_free(ctx);
+
+    if (ret > 0) {
+        assert(plaintextlen >= 0);
+        return plaintextlen;
+    }
+    return -1;
+}
+
 unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
         const unsigned char* key, const unsigned char* aad, const size_t aad_len) {
     unsigned char nonce[NONCE_LEN];
     RAND_bytes(nonce, NONCE_LEN);
+
+    if (use_aes) {
+        unsigned char* ciphertext = malloc(mesg_len + TAG_LEN + NONCE_LEN + sizeof(uint32_t));
+        size_t total_len = encrypt_aead(
+                message, mesg_len, aad, aad_len, key, nonce, ciphertext, ciphertext + mesg_len);
+        //Append nonce
+        memcpy(ciphertext + mesg_len + TAG_LEN, nonce, NONCE_LEN);
+
+        //Shift ciphertext over and prepend length to it
+        memmove(ciphertext + sizeof(uint32_t), ciphertext, mesg_len + TAG_LEN + NONCE_LEN);
+        uint32_t cipher_len = mesg_len + TAG_LEN + NONCE_LEN;
+
+        memcpy(ciphertext, &cipher_len, sizeof(uint32_t));
+
+        printf("Total len %lu\n", total_len);
+
+        printf("Nonce:\n");
+        for (int i = 0; i < NONCE_LEN; ++i) {
+            printf("%02x", ciphertext[mesg_len + TAG_LEN + i + 4]);
+        }
+        printf("\n");
+
+        printf("Message:\n");
+        for (unsigned long i = 0; i < mesg_len; ++i) {
+            printf("%02x", ciphertext[i + 4]);
+        }
+        printf("\n");
+        printf("Tag:\n");
+        for (unsigned long i = 0; i < TAG_LEN; ++i) {
+            printf("%02x", ciphertext[mesg_len + i + 4]);
+        }
+        printf("\n");
+        printf("AAD:\n");
+        for (unsigned long i = 0; i < aad_len; ++i) {
+            printf("%02x", aad[i]);
+        }
+        printf("\n");
+
+        return ciphertext;
+    }
 
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     EVP_EncryptInit_ex(ctx, EVP_chacha20_poly1305(), NULL, key, nonce);
@@ -51,13 +203,13 @@ unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
 
     memcpy(ciphertext, &cipher_len, sizeof(uint32_t));
 
+    EVP_CIPHER_CTX_free(ctx);
+
     printf("Nonce:\n");
     for (int i = 0; i < NONCE_LEN; ++i) {
         printf("%02x", ciphertext[mesg_len + TAG_LEN + i]);
     }
     printf("\n");
-
-    EVP_CIPHER_CTX_free(ctx);
 
     printf("Message:\n");
     for (unsigned long i = 0; i < mesg_len; ++i) {
@@ -77,11 +229,18 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
         const unsigned char* aad, const size_t aad_len) {
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
 
-    printf("Nonce:\n");
-    for (int i = 0; i < NONCE_LEN; ++i) {
-        printf("%02x", message[mesg_len - NONCE_LEN + i]);
+    if (use_aes) {
+        unsigned char* plaintext = malloc(mesg_len + TAG_LEN + NONCE_LEN + sizeof(uint32_t));
+        ssize_t res = decrypt_aead(message, mesg_len - TAG_LEN - NONCE_LEN, aad, aad_len, key,
+                message + mesg_len - NONCE_LEN, message + mesg_len - TAG_LEN - NONCE_LEN,
+                plaintext);
+        if (res == -1) {
+            printf("Bad decrypt\n");
+            free(plaintext);
+            return NULL;
+        }
+        return plaintext;
     }
-    printf("\n");
 
     if (!EVP_DecryptInit_ex(
                 ctx, EVP_chacha20_poly1305(), NULL, key, message + mesg_len - NONCE_LEN)) {
@@ -135,14 +294,15 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
     return plaintext;
 }
 
-unsigned char *password_key_derive(const char *password) {
-    unsigned char *key = malloc(KEY_LEN);
+unsigned char* password_key_derive(const char* password) {
+    unsigned char* key = malloc(KEY_LEN);
     PKCS5_PBKDF2_HMAC(password, strlen(password), NULL, 0, 100000, EVP_sha256(), KEY_LEN, key);
     return key;
 }
 
-unsigned char* read_stego(const char* in_filename, const char* data_filename, const char *password) {
-    unsigned char *key = password_key_derive(password);
+unsigned char* read_stego(
+        const char* in_filename, const char* data_filename, const char* password) {
+    unsigned char* key = password_key_derive(password);
 
     size_t byte_count = 0;
     size_t bit_count = 0;
@@ -174,8 +334,14 @@ unsigned char* read_stego(const char* in_filename, const char* data_filename, co
         }
         bit_count = (bit_count + 1) % 8;
     }
+    printf("Read buffer: ");
+    for (size_t i = 0; i < data_len + 4; ++i) {
+        printf("%02x", buffer[i]);
+    }
+    printf("\n");
 
-    unsigned char* message = decrypt_data(buffer + sizeof(uint32_t), data_len, key, NULL, 0);
+    unsigned char* message
+            = decrypt_data(buffer + sizeof(uint32_t), data_len, key, (unsigned char*) &use_aes, 1);
     if (!message) {
         goto cleanup;
     }
@@ -198,7 +364,8 @@ cleanup:
     return message;
 }
 
-void write_stego(const char* in_filename, const char* out_filename, const char* data_filename, const char *password) {
+void write_stego(const char* in_filename, const char* out_filename, const char* data_filename,
+        const char* password) {
     FILE* f = fopen(data_filename, "rb");
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
@@ -210,12 +377,12 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
 
     size_t mesg_len = fsize;
 
-    unsigned char *key = password_key_derive(password);
+    unsigned char* key = password_key_derive(password);
 
     size_t byte_count = 0;
     size_t bit_count = 0;
 
-    unsigned char* ciphertext = encrypt_data(mesg, mesg_len, key, NULL, 0);
+    unsigned char* ciphertext = encrypt_data(mesg, mesg_len, key, (unsigned char*) &use_aes, 1);
 
     int x, y, n;
     unsigned char* data = stbi_load(in_filename, &x, &y, &n, 3);
@@ -260,15 +427,14 @@ int main(int argc, char** argv) {
     const char* password = NULL;
     bool is_encrypt = false;
     for (;;) {
-        static struct option long_options[]
-                = {{"help", no_argument, 0, 'h'}, {"input", required_argument, 0, 'i'},
-                        {"output", required_argument, 0, 'o'}, {"mode", required_argument, 0, 'm'},
-                        {"data", required_argument, 0, 'd'},
-                        {"password", required_argument, 0, 'p'},
-                        {0, 0, 0, 0}};
+        static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+                {"input", required_argument, 0, 'i'}, {"output", required_argument, 0, 'o'},
+                {"mode", required_argument, 0, 'm'}, {"data", required_argument, 0, 'd'},
+                {"password", required_argument, 0, 'p'}, {"aes", no_argument, 0, 'a'},
+                {0, 0, 0, 0}};
 
         int option_index = 0;
-        if ((choice = getopt_long(argc, argv, "hi:o:m:d:p:", long_options, &option_index)) == -1) {
+        if ((choice = getopt_long(argc, argv, "hi:o:m:d:p:a", long_options, &option_index)) == -1) {
             break;
         }
 
@@ -287,6 +453,9 @@ int main(int argc, char** argv) {
                 break;
             case 'p':
                 password = optarg;
+                break;
+            case 'a':
+                use_aes = true;
                 break;
             case 'h':
             case '?':
