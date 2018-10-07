@@ -2,6 +2,9 @@
 ├── [01;34mbin[00m
 │   └── [01;32m8505-ass2[00m
 ├── CMakeLists.txt
+├── [01;34mdocs[00m
+│   ├── 8505_Assignment_2-Design.pdf
+│   └── 8505_Assignment_2-Testing.pdf
 ├── [01;34mgui[00m
 │   └── [01;34m8505-asn2[00m
 │       ├── 8505-asn2.pro
@@ -16,8 +19,11 @@
 ├── Manifest
 ├── README.md
 └── [01;34msrc[00m
+    ├── image.c
     ├── main.c
+    ├── shared.h
     ├── stb_image.h
-    └── stb_image_write.h
+    ├── stb_image_write.h
+    └── utils.c
 
-5 directories, 15 files
+6 directories, 20 files
