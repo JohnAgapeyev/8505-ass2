@@ -337,7 +337,17 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
 
 #define usage() \
     do { \
-        printf("Usage: 8505-ass2 input-file output-file mode [cipher]\n"); \
+        printf("Usage options:\n"\
+            "\t[i]nput    - The input carrier file\n"\
+            "\t[o]utput   - The output carrier file\n"\
+            "\t[f]ile     - The data input/output file\n"\
+            "\t[e]ncrypt  - Encrypt mode\n"\
+            "\t[d]ecrypt  - Decrypt mode\n"\
+            "\t[p]assword - The encryption password\n"\
+            "\t[a]es      - Encrypt using AES-GCM instead of ChaCha20-Poly1305\n"\
+            "\t[b]bmp     - Write out a BMP file instead of a PNG file\n"\
+            "\t[h]elp     - This message\n"\
+                ); \
     } while (0)
 
 int main(int argc, char** argv) {
