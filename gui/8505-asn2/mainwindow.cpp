@@ -203,7 +203,7 @@ void MainWindow::on_pushButtonDecrypt_clicked() {
     }
 
     QStringList args;
-    args << "-i" << ui->lineEditcf->text() << "-o" << ui->lineEditout->text() << "-p" << ui->lineEditPassword->text() << "-d" << "-s" << bit_pos();
+    args << "-i" << ui->lineEditcf->text() << "-f" << ui->lineEditout->text() << "-p" << ui->lineEditPassword->text() << "-d" << "-s" << bit_pos();
     if (ui->buttonGroupEnc->checkedButton() == ui->radioButtonAES) {
         args << "-a";
     }
