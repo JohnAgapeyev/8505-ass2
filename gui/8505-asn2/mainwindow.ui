@@ -86,7 +86,7 @@
      <string>Select File</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="pushButtonHide">
     <property name="geometry">
      <rect>
       <x>470</x>
@@ -99,7 +99,7 @@
      <string>Hide</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_2">
+   <widget class="QPushButton" name="pushButtonExtract">
     <property name="geometry">
      <rect>
       <x>470</x>
@@ -195,6 +195,29 @@
       </rect>
      </property>
     </widget>
+   </widget>
+   <widget class="QTextBrowser" name="textBrowserMessages">
+    <property name="geometry">
+     <rect>
+      <x>530</x>
+      <y>380</y>
+      <width>451</width>
+      <height>91</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>380</y>
+      <width>61</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Messages:</string>
+    </property>
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
