@@ -81,27 +81,6 @@ size_t encrypt_aead(const unsigned char* plaintext, size_t plain_len, const unsi
 ssize_t decrypt_aead(const unsigned char* ciphertext, size_t cipher_len, const unsigned char* aad,
         const size_t aad_len, const unsigned char* key, const unsigned char* iv,
         const unsigned char* tag, unsigned char* plaintext) {
-    printf("Nonce:\n");
-    for (int i = 0; i < NONCE_LEN; ++i) {
-        printf("%02x", iv[i]);
-    }
-    printf("\n");
-    printf("Message:\n");
-    for (unsigned long i = 0; i < cipher_len; ++i) {
-        printf("%02x", ciphertext[i]);
-    }
-    printf("\n");
-    printf("Tag:\n");
-    for (unsigned long i = 0; i < TAG_LEN; ++i) {
-        printf("%02x", tag[i]);
-    }
-    printf("\n");
-    printf("AAD:\n");
-    for (unsigned long i = 0; i < aad_len; ++i) {
-        printf("%02x", aad[i]);
-    }
-    printf("\n");
-
     EVP_CIPHER_CTX* ctx;
     nullCheckCryptoAPICall(ctx = EVP_CIPHER_CTX_new());
 
@@ -142,7 +121,7 @@ unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
 
     if (use_aes) {
         unsigned char* ciphertext = malloc(mesg_len + TAG_LEN + NONCE_LEN + sizeof(uint32_t));
-        size_t total_len = encrypt_aead(
+        encrypt_aead(
                 message, mesg_len, aad, aad_len, key, nonce, ciphertext, ciphertext + mesg_len);
         //Append nonce
         memcpy(ciphertext + mesg_len + TAG_LEN, nonce, NONCE_LEN);
@@ -152,30 +131,6 @@ unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
         uint32_t cipher_len = mesg_len + TAG_LEN + NONCE_LEN;
 
         memcpy(ciphertext, &cipher_len, sizeof(uint32_t));
-
-        printf("Total len %lu\n", total_len);
-
-        printf("Nonce:\n");
-        for (int i = 0; i < NONCE_LEN; ++i) {
-            printf("%02x", ciphertext[mesg_len + TAG_LEN + i + 4]);
-        }
-        printf("\n");
-
-        printf("Message:\n");
-        for (unsigned long i = 0; i < mesg_len; ++i) {
-            printf("%02x", ciphertext[i + 4]);
-        }
-        printf("\n");
-        printf("Tag:\n");
-        for (unsigned long i = 0; i < TAG_LEN; ++i) {
-            printf("%02x", ciphertext[mesg_len + i + 4]);
-        }
-        printf("\n");
-        printf("AAD:\n");
-        for (unsigned long i = 0; i < aad_len; ++i) {
-            printf("%02x", aad[i]);
-        }
-        printf("\n");
 
         return ciphertext;
     }
@@ -206,23 +161,6 @@ unsigned char* encrypt_data(const unsigned char* message, const size_t mesg_len,
 
     EVP_CIPHER_CTX_free(ctx);
 
-    printf("Nonce:\n");
-    for (int i = 0; i < NONCE_LEN; ++i) {
-        printf("%02x", ciphertext[mesg_len + TAG_LEN + i]);
-    }
-    printf("\n");
-
-    printf("Message:\n");
-    for (unsigned long i = 0; i < mesg_len; ++i) {
-        printf("%02x", ciphertext[i]);
-    }
-    printf("\n");
-    printf("Tag:\n");
-    for (unsigned long i = 0; i < TAG_LEN; ++i) {
-        printf("%02x", ciphertext[mesg_len + i]);
-    }
-    printf("\n");
-
     return ciphertext;
 }
 
@@ -243,17 +181,11 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
         return plaintext;
     }
 
-    if (!EVP_DecryptInit_ex(
-                ctx, EVP_chacha20_poly1305(), NULL, key, message + mesg_len - NONCE_LEN)) {
-        puts("Init failure");
-        return NULL;
-    }
+    checkCryptoAPICall(EVP_DecryptInit_ex(
+            ctx, EVP_chacha20_poly1305(), NULL, key, message + mesg_len - NONCE_LEN));
 
     int len;
-    if (!EVP_DecryptUpdate(ctx, NULL, &len, aad, aad_len)) {
-        puts("AAD set failure");
-        return NULL;
-    }
+    checkCryptoAPICall(EVP_DecryptUpdate(ctx, NULL, &len, aad, aad_len));
 
     if (mesg_len <= TAG_LEN + NONCE_LEN) {
         puts("Invalid message length");
@@ -262,33 +194,13 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
 
     unsigned char* plaintext = malloc(mesg_len - TAG_LEN - NONCE_LEN);
 
-    printf("Message:\n");
-    for (unsigned long i = 0; i < mesg_len - TAG_LEN - NONCE_LEN; ++i) {
-        printf("%02x", message[i]);
-    }
-    printf("\n");
+    checkCryptoAPICall(
+            EVP_DecryptUpdate(ctx, plaintext, &len, message, mesg_len - TAG_LEN - NONCE_LEN));
 
-    if (!EVP_DecryptUpdate(ctx, plaintext, &len, message, mesg_len - TAG_LEN - NONCE_LEN)) {
-        puts("decrypt update failure");
-        return NULL;
-    }
+    checkCryptoAPICall(EVP_CIPHER_CTX_ctrl(
+            ctx, EVP_CTRL_GCM_SET_TAG, TAG_LEN, message + mesg_len - TAG_LEN - NONCE_LEN));
 
-    printf("Tag:\n");
-    for (unsigned long i = 0; i < TAG_LEN; ++i) {
-        printf("%02x", message[mesg_len - TAG_LEN - NONCE_LEN + i]);
-    }
-    printf("\n");
-
-    if (!EVP_CIPHER_CTX_ctrl(
-                ctx, EVP_CTRL_GCM_SET_TAG, TAG_LEN, message + mesg_len - TAG_LEN - NONCE_LEN)) {
-        puts("Set tag failure");
-        return NULL;
-    }
-
-    if (!EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) {
-        puts("Decrypt call failure");
-        return NULL;
-    }
+    checkCryptoAPICall(EVP_DecryptFinal_ex(ctx, plaintext + len, &len));
 
     EVP_CIPHER_CTX_free(ctx);
 
@@ -332,7 +244,7 @@ unsigned char* read_stego(
             ++byte_count;
             if (byte_count > 3 && data_len == 0) {
                 memcpy(&data_len, buffer, sizeof(uint32_t));
-                if ((int) data_len > ((x*y*n) / 8)) {
+                if ((int) data_len > ((x * y * n) / 8)) {
                     //Image is corrupted or does not have a message embedded
                     exit(EXIT_FAILURE);
                 }
@@ -343,11 +255,6 @@ unsigned char* read_stego(
         }
         bit_count = (bit_count + 1) % 8;
     }
-    printf("Read buffer: ");
-    for (size_t i = 0; i < data_len + 4; ++i) {
-        printf("%02x", buffer[i]);
-    }
-    printf("\n");
 
     unsigned char* message
             = decrypt_data(buffer + sizeof(uint32_t), data_len, key, (unsigned char*) &use_aes, 1);
@@ -355,17 +262,9 @@ unsigned char* read_stego(
         goto cleanup;
     }
 
-    if (data_filename) {
-        FILE* f = fopen(data_filename, "wb");
-        fwrite(message, data_len - OVERHEAD_LEN - 16 - 12, 1, f);
-        fclose(f);
-    } else {
-        printf("Data message: ");
-        for (size_t i = 0; i < data_len - OVERHEAD_LEN - 16 - 12; ++i) {
-            printf("%c", message[i]);
-        }
-        printf("\n");
-    }
+    FILE* f = fopen(data_filename, "wb");
+    fwrite(message, data_len - OVERHEAD_LEN - 16 - 12, 1, f);
+    fclose(f);
 
 cleanup:
     stbi_image_free(data);
@@ -418,11 +317,6 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
         }
         bit_count = (bit_count + 1) % 8;
     }
-    printf("Data message: ");
-    for (size_t i = 0; i < mesg_len + OVERHEAD_LEN; ++i) {
-        printf("%02x", ciphertext[i]);
-    }
-    printf("\n");
 
     if (out_bmp) {
         stbi_write_bmp(out_filename, x, y, n, data);
@@ -491,7 +385,7 @@ int main(int argc, char** argv) {
                 return EXIT_FAILURE;
         }
     }
-    if (!input_filename || !mode || !password) {
+    if (!input_filename || !mode || !password || !data_filename) {
         usage();
         return EXIT_FAILURE;
     }
@@ -503,7 +397,7 @@ int main(int argc, char** argv) {
         usage();
         return EXIT_FAILURE;
     }
-    if (is_encrypt && !output_filename && !data_filename) {
+    if (is_encrypt && !output_filename) {
         usage();
         return EXIT_FAILURE;
     }
