@@ -63,12 +63,9 @@ compile_commands.json
 CTestTestfile.cmake
 
 bin/
+gui/bin/
 
-gui/build*
-gui/build*/
+gui/
+!gui/8505-asn2
 
 
-gui/8505-asn2/8505-asn2.pro.user.2ca6953
-gui/build-8505-asn2-Desktop-Debug/8505-asn2
-gui/build-8505-asn2-Desktop-Debug/moc_mainwindow.cpp
-gui/build-8505-asn2-Desktop-Debug/ui_mainwindow.h

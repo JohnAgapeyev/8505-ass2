@@ -32,6 +32,7 @@ private slots:
 
 private:
     void append_message(QString st);
+    QString bit_pos();
     Ui::MainWindow *ui;
 };
 

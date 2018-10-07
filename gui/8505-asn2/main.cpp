@@ -1,8 +1,24 @@
 #include "mainwindow.h"
 #include <QApplication>
 
-int main(int argc, char *argv[])
-{
+
+/*
+ * function:
+ *    main
+ *
+ * return:
+ *    int status code of the program
+ *
+ * parameters:
+ *    int argc total arguments
+ *    char *argv[] arguments passed
+ *
+ * notes:
+ *    runs the program, initializing the window
+ *
+ * */
+
+int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
