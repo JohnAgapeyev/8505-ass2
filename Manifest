@@ -1,0 +1,23 @@
+[01;34m.[00m
+├── [01;34mbin[00m
+│   └── [01;32m8505-ass2[00m
+├── CMakeLists.txt
+├── [01;34mgui[00m
+│   └── [01;34m8505-asn2[00m
+│       ├── 8505-asn2.pro
+│       ├── 8505-asn2.pro.user
+│       ├── main.cpp
+│       ├── mainwindow.cpp
+│       ├── mainwindow.h
+│       └── mainwindow.ui
+├── [01;34mguibin[00m
+│   └── [01;32m8505-asn2-gui[00m
+├── LICENSE
+├── Manifest
+├── README.md
+└── [01;34msrc[00m
+    ├── main.c
+    ├── stb_image.h
+    └── stb_image_write.h
+
+5 directories, 15 files
