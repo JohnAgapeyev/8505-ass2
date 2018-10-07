@@ -63,3 +63,7 @@ compile_commands.json
 CTestTestfile.cmake
 
 bin/
+
+gui/build*
+gui/build*/
+
