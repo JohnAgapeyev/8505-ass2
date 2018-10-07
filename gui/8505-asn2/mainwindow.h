@@ -18,13 +18,20 @@ public:
 private slots:
     void on_pushButtonCF_clicked();
 
-    void on_pushButtonFTH_clicked();
+    void on_pushButtonTool_clicked();
 
-    void on_pushButtonExtract_clicked();
+    void on_pushButtonClear_clicked();
 
-    void on_pushButtonHide_clicked();
+    void on_pushButtonIn_clicked();
+
+    void on_pushButtonOut_clicked();
+
+    void on_pushButtonEncrypt_clicked();
+
+    void on_pushButtonDecrypt_clicked();
 
 private:
+    void append_message(QString st);
     Ui::MainWindow *ui;
 };
 

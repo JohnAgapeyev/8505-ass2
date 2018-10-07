@@ -2,25 +2,56 @@
 #include "ui_mainwindow.h"
 
 #include <QFileDialog>
-#include <array>
-#include <cstdio>
-#include <iostream>
-#include <memory>
-#include <stdexcept>
+#include <QProcess>
+
 #include <string>
 
-static QString cf_path, fth_path;
+static QString cf_path, in_path, out_path, tool_path{"8505-ass2"}, pass;
 
-std::string exec(const char* cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) throw std::runtime_error("popen() failed!");
-    while (!feof(pipe.get())) {
-        if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
-            result += buffer.data();
+//check for if the cli is actually runable
+//thanks to Gerhard Stein for the idea https://stackoverflow.com/a/51041497
+bool cli_avalible() {
+    QProcess findProcess;
+    QStringList arguments;
+    arguments << tool_path;
+    findProcess.start("which", arguments);
+    findProcess.setReadChannel(QProcess::ProcessChannel::StandardOutput);
+
+    if(!findProcess.waitForFinished()) {
+        return false; // Not found or which does not work
     }
-    return result;
+
+    QString retStr(findProcess.readAll());
+
+    retStr = retStr.trimmed();
+
+    QFile file(retStr);
+    QFileInfo check_file(file);
+
+    if (check_file.exists() && check_file.isFile())	{
+        return true; // Found!
+    } else {
+        return false; // Not found!
+    }
+}
+
+void MainWindow::append_message(QString st) {
+    ui->textBrowserMessages->append("\n" + st);
+}
+
+QString exec(QStringList args) {
+    QProcess findProcess;
+    findProcess.start(tool_path, args);
+    findProcess.setReadChannel(QProcess::ProcessChannel::StandardOutput);
+
+    if(!findProcess.waitForFinished()) {
+        return ""; // Not found or which does not work
+    }
+
+    QString retStr(findProcess.readAll());
+
+    retStr = retStr.trimmed();
+    return retStr;
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -35,37 +66,85 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::on_pushButtonDecrypt_clicked()
+{
+    if (cf_path.length() == 0 || out_path.length() == 0) {
+        ui->textBrowserMessages->setText("please select files before attempting decrypting");
+        return;
+    }
+
+    if (!cli_avalible()) {
+        ui->textBrowserMessages->setText("could not find cli tool, please select it");
+        return;
+    }
+
+    QStringList args;
+    args << "-i" << cf_path << "-o" << out_path << "-p" << ui->lineEditPassword->text() << "-d";
+    if (ui->buttonGroupEnc->checkedButton() == ui->radioButtonAES) {
+        args << "-a";
+    }
+    append_message("running:" + tool_path + args.join(" "));
+    append_message(exec(args));
+}
+
+void MainWindow::on_pushButtonEncrypt_clicked()
+{
+    if (cf_path.length() == 0 || in_path.length() == 0 || out_path.length() == 0) {
+        ui->textBrowserMessages->setText("please select files before attempting encrypting");
+        return;
+    }
+
+    if (!cli_avalible()) {
+        ui->textBrowserMessages->setText("could not find cli tool, please select it");
+        return;
+    }
+
+    QStringList args;
+    args << "-i" << cf_path << "-o" << out_path << "-f" << in_path << "-p" << ui->lineEditPassword->text() << "-e";
+    if (ui->buttonGroupEnc->checkedButton() == ui->radioButtonAES) {
+        args << "-a";
+    }
+    append_message("running:" + tool_path + args.join(" "));
+    append_message(exec(args));
+}
+
+void MainWindow::on_pushButtonClear_clicked()
+{
+    ui->textBrowserMessages->setText({});
+}
+
+void MainWindow::on_pushButtonTool_clicked()
+{
+    QString mesg;
+    tool_path = QFileDialog::getOpenFileName(0, "Tool", ".");
+    mesg = "Tool Selected: " + tool_path;
+
+    append_message(mesg);
+}
+
+void MainWindow::on_pushButtonIn_clicked()
+{
+    QString mesg;
+    in_path = QFileDialog::getOpenFileName(0, "Input File", ".");
+    mesg = "Input File Opened: " + in_path;
+
+    append_message(mesg);
+}
+
+void MainWindow::on_pushButtonOut_clicked()
+{
+    QString mesg;
+    out_path = QFileDialog::getSaveFileName(0, "Output File", ".");
+    mesg = "Output File Opened: " + out_path;
+
+    append_message(mesg);
+}
+
 void MainWindow::on_pushButtonCF_clicked()
 {
-    QFileDialog fd{};
     QString mesg;
-    cf_path = fd.getOpenFileName();
+    cf_path = QFileDialog::getOpenFileName(0, "Carrier File", ".", "*.png;*.bmp");
     mesg = "Carrier File Opened: " + cf_path;
 
     ui->textBrowserMessages->setText(mesg);
-}
-
-void MainWindow::on_pushButtonFTH_clicked()
-{
-    QFileDialog fd{};
-    QString mesg;
-    fth_path = fd.getOpenFileName();
-    mesg = "Combine File Opened: " + fth_path;
-
-    ui->textBrowserMessages->setText(mesg);
-}
-
-void MainWindow::on_pushButtonExtract_clicked()
-{
-
-}
-
-void MainWindow::on_pushButtonHide_clicked()
-{
-    if (cf_path.length() == 0 || fth_path.length() == 0) {
-        ui->textBrowserMessages->setText("please select files before attempting hiding");
-        return;
-    }
-    std::string result = exec(("8505-ass2 -i '" + cf_path.toStdString() + "' -o '"+ fth_path.toStdString() + "'").c_str());
-    ui->textBrowserMessages->setText(QString::fromStdString(result));
 }
