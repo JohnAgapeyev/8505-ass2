@@ -31,6 +31,23 @@ int bit_setting = 0;
                "Output file is required in encryption mode only\n"); \
     } while (0)
 
+
+/*
+ * function:
+ *    main
+ *
+ * return:
+ *    int exit status of the program
+ *
+ * parameters:
+ *    int argc number of args
+ *    char** argv the args
+ *
+ * notes:
+ *    parse the arguments and run the tool
+ *
+ * */
+
 int main(int argc, char** argv) {
     int choice;
     const char* input_filename = NULL;

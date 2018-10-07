@@ -13,8 +13,24 @@
 #include "shared.h"
 #include "stb_image_write.h"
 
-unsigned char* read_stego(
-        const char* in_filename, const char* data_filename, const char* password) {
+
+/*
+ * function:
+ *    read_stego
+ *
+ * return:
+ *    unsigned char*
+ *
+ * parameters:
+ *    const char* in_filename file to read
+ *    const char* data_filename file to extract
+ *    const char* password password to use
+ *
+ * notes:
+ *    decrypt and read the data from the files
+ * */
+
+unsigned char* read_stego( const char* in_filename, const char* data_filename, const char* password) {
     unsigned char* key = password_key_derive(password);
 
     size_t byte_count = 0;
@@ -72,8 +88,25 @@ cleanup:
     return message;
 }
 
-void write_stego(const char* in_filename, const char* out_filename, const char* data_filename,
-        const char* password) {
+
+/*
+ * function:
+ *    write_stego
+ *
+ * return:
+ *    void
+ *
+ * parameters:
+ *    const char* in_filename carrier file
+ *    const char* out_filename output file
+ *    const char* data_filename data to add file
+ *    const char* password password to use
+ *
+ * notes:
+ *    encrypts the data in the data file and adds it to the output file
+ * */
+
+void write_stego(const char* in_filename, const char* out_filename, const char* data_filename, const char* password) {
     FILE* f = fopen(data_filename, "rb");
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
