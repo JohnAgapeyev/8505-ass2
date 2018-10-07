@@ -45,6 +45,7 @@
 
 bool use_aes = false;
 bool out_bmp = false;
+int bit_setting = 0;
 
 size_t encrypt_aead(const unsigned char* plaintext, size_t plain_len, const unsigned char* aad,
         const size_t aad_len, const unsigned char* key, const unsigned char* iv,
@@ -237,7 +238,7 @@ unsigned char* read_stego(
     }
 
     for (int i = 0; i < x * y * n; ++i) {
-        if (data[i] % 2) {
+        if (!!(data[i] & (1 << bit_setting))) {
             //Pixel is 1
             buffer[byte_count] |= (1 << bit_count);
         } else {
@@ -310,8 +311,8 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
     }
 
     for (int i = 0; i < x * y * n; ++i) {
-        if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (data[i] % 2)) {
-            ++data[i];
+        if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (!!(data[i] & (1 << bit_setting)))) {
+            data[i] ^= (1 << bit_setting);
         }
 
         if (bit_count == 7) {
@@ -337,17 +338,20 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
 
 #define usage() \
     do { \
-        printf("Usage options:\n"\
-            "\t[i]nput    - The input carrier file\n"\
-            "\t[o]utput   - The output carrier file\n"\
-            "\t[f]ile     - The data input/output file\n"\
-            "\t[e]ncrypt  - Encrypt mode\n"\
-            "\t[d]ecrypt  - Decrypt mode\n"\
-            "\t[p]assword - The encryption password\n"\
-            "\t[a]es      - Encrypt using AES-GCM instead of ChaCha20-Poly1305\n"\
-            "\t[b]bmp     - Write out a BMP file instead of a PNG file\n"\
-            "\t[h]elp     - This message\n"\
-                ); \
+        printf("Usage options:\n" \
+               "\t[i]nput    - The input carrier file\n" \
+               "\t[o]utput   - The output carrier file\n" \
+               "\t[f]ile     - The data input/output file\n" \
+               "\t[e]ncrypt  - Encrypt mode\n" \
+               "\t[d]ecrypt  - Decrypt mode\n" \
+               "\t[p]assword - The encryption password\n" \
+               "\t[a]es      - Encrypt using AES-GCM instead of ChaCha20-Poly1305\n" \
+               "\t[b]mp      - Write out a BMP file instead of a PNG file\n" \
+               "\t[s]etting  - The bit number of each channel that will be modified (0-7, with 0 being LSB)\n" \
+               "\t[h]elp     - This message\n" \
+               "Input, file, mode, and password are required arguments\n"\
+               "Output file is required in encryption mode only\n"\
+               ); \
     } while (0)
 
 int main(int argc, char** argv) {
@@ -363,10 +367,10 @@ int main(int argc, char** argv) {
                 {"input", required_argument, 0, 'i'}, {"output", required_argument, 0, 'o'},
                 {"encrypt", no_argument, 0, 'e'}, {"decrypt", no_argument, 0, 'd'},
                 {"file", required_argument, 0, 'f'}, {"password", required_argument, 0, 'p'},
-                {"aes", no_argument, 0, 'a'}, {"bmp", no_argument, 0, 'b'}, {0, 0, 0, 0}};
+                {"aes", no_argument, 0, 'a'}, {"setting", required_argument, 0, 's'}, {0, 0, 0, 0}};
 
         int option_index = 0;
-        if ((choice = getopt_long(argc, argv, "hi:o:f:p:abed", long_options, &option_index))
+        if ((choice = getopt_long(argc, argv, "hi:o:f:p:abeds:", long_options, &option_index))
                 == -1) {
             break;
         }
@@ -405,6 +409,13 @@ int main(int argc, char** argv) {
                 break;
             case 'b':
                 out_bmp = true;
+                break;
+            case 's':
+                bit_setting = optarg[0] - '0';
+                if (bit_setting < 0 || bit_setting > 7) {
+                    usage();
+                    exit(EXIT_FAILURE);
+                }
                 break;
             case 'h':
             case '?':
