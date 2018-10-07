@@ -21,6 +21,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QRadioButton>
 #include <QtWidgets/QStatusBar>
+#include <QtWidgets/QTextBrowser>
 #include <QtWidgets/QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -35,14 +36,16 @@ public:
     QLabel *label_2;
     QPushButton *pushButtonFTH;
     QPushButton *pushButtonCF;
-    QPushButton *pushButton;
-    QPushButton *pushButton_2;
+    QPushButton *pushButtonHide;
+    QPushButton *pushButtonExtract;
     QGroupBox *groupBox;
     QLabel *label_4;
     QRadioButton *radioButtonAES;
     QRadioButton *radioButtonCHA;
     QLabel *label_3;
     QLineEdit *lineEdit;
+    QTextBrowser *textBrowserMessages;
+    QLabel *label_5;
     QStatusBar *statusBar;
     QMenuBar *menuBar;
     QButtonGroup *buttonGroupEnc;
@@ -72,12 +75,12 @@ public:
         pushButtonCF = new QPushButton(centralWidget);
         pushButtonCF->setObjectName(QStringLiteral("pushButtonCF"));
         pushButtonCF->setGeometry(QRect(70, 350, 80, 23));
-        pushButton = new QPushButton(centralWidget);
-        pushButton->setObjectName(QStringLiteral("pushButton"));
-        pushButton->setGeometry(QRect(470, 160, 51, 23));
-        pushButton_2 = new QPushButton(centralWidget);
-        pushButton_2->setObjectName(QStringLiteral("pushButton_2"));
-        pushButton_2->setGeometry(QRect(470, 190, 51, 23));
+        pushButtonHide = new QPushButton(centralWidget);
+        pushButtonHide->setObjectName(QStringLiteral("pushButtonHide"));
+        pushButtonHide->setGeometry(QRect(470, 160, 51, 23));
+        pushButtonExtract = new QPushButton(centralWidget);
+        pushButtonExtract->setObjectName(QStringLiteral("pushButtonExtract"));
+        pushButtonExtract->setGeometry(QRect(470, 190, 51, 23));
         groupBox = new QGroupBox(centralWidget);
         groupBox->setObjectName(QStringLiteral("groupBox"));
         groupBox->setGeometry(QRect(10, 380, 341, 91));
@@ -101,6 +104,12 @@ public:
         lineEdit = new QLineEdit(groupBox);
         lineEdit->setObjectName(QStringLiteral("lineEdit"));
         lineEdit->setGeometry(QRect(80, 60, 113, 23));
+        textBrowserMessages = new QTextBrowser(centralWidget);
+        textBrowserMessages->setObjectName(QStringLiteral("textBrowserMessages"));
+        textBrowserMessages->setGeometry(QRect(530, 380, 451, 91));
+        label_5 = new QLabel(centralWidget);
+        label_5->setObjectName(QStringLiteral("label_5"));
+        label_5->setGeometry(QRect(460, 380, 61, 20));
         MainWindow->setCentralWidget(centralWidget);
         statusBar = new QStatusBar(MainWindow);
         statusBar->setObjectName(QStringLiteral("statusBar"));
@@ -122,13 +131,14 @@ public:
         label_2->setText(QApplication::translate("MainWindow", "Carrier", nullptr));
         pushButtonFTH->setText(QApplication::translate("MainWindow", "Select File", nullptr));
         pushButtonCF->setText(QApplication::translate("MainWindow", "Select File", nullptr));
-        pushButton->setText(QApplication::translate("MainWindow", "Hide", nullptr));
-        pushButton_2->setText(QApplication::translate("MainWindow", "Extract", nullptr));
+        pushButtonHide->setText(QApplication::translate("MainWindow", "Hide", nullptr));
+        pushButtonExtract->setText(QApplication::translate("MainWindow", "Extract", nullptr));
         groupBox->setTitle(QApplication::translate("MainWindow", "Encryption", nullptr));
         label_4->setText(QApplication::translate("MainWindow", "Algorithm:", nullptr));
         radioButtonAES->setText(QApplication::translate("MainWindow", "AES-GCM", nullptr));
         radioButtonCHA->setText(QApplication::translate("MainWindow", "ChaCha20-Poly1305", nullptr));
         label_3->setText(QApplication::translate("MainWindow", "Password:", nullptr));
+        label_5->setText(QApplication::translate("MainWindow", "Messages:", nullptr));
     } // retranslateUi
 
 };
