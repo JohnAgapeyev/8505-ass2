@@ -28,6 +28,8 @@ find_package(OpenSSL 1.1.0 REQUIRED)
 
 set(ASS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/image.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils.c
 )
 
 add_executable(${PROJECT_NAME} ${ASS_SOURCES})
