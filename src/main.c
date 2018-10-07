@@ -304,7 +304,7 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
         exit(EXIT_FAILURE);
     }
 
-    if ((int) mesg_len > ((x * y * n) / 8)) {
+    if ((int) (mesg_len * 8) > (x * y * n)) {
         fprintf(stderr, "Message too big for carrier image\n");
         exit(EXIT_FAILURE);
     }
