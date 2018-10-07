@@ -345,18 +345,18 @@ int main(int argc, char** argv) {
     const char* input_filename = NULL;
     const char* output_filename = NULL;
     const char* data_filename = NULL;
-    const char* mode = NULL;
     const char* password = NULL;
     bool is_encrypt = false;
+    bool mode_set = false;
     for (;;) {
         static struct option long_options[] = {{"help", no_argument, 0, 'h'},
                 {"input", required_argument, 0, 'i'}, {"output", required_argument, 0, 'o'},
-                {"mode", required_argument, 0, 'm'}, {"data", required_argument, 0, 'd'},
-                {"password", required_argument, 0, 'p'}, {"aes", no_argument, 0, 'a'},
-                {"bmp", no_argument, 0, 'b'}, {0, 0, 0, 0}};
+                {"encrypt", no_argument, 0, 'e'}, {"decrypt", no_argument, 0, 'd'},
+                {"file", required_argument, 0, 'f'}, {"password", required_argument, 0, 'p'},
+                {"aes", no_argument, 0, 'a'}, {"bmp", no_argument, 0, 'b'}, {0, 0, 0, 0}};
 
         int option_index = 0;
-        if ((choice = getopt_long(argc, argv, "hi:o:m:d:p:ab", long_options, &option_index))
+        if ((choice = getopt_long(argc, argv, "hi:o:f:p:abed", long_options, &option_index))
                 == -1) {
             break;
         }
@@ -368,10 +368,23 @@ int main(int argc, char** argv) {
             case 'o':
                 output_filename = optarg;
                 break;
-            case 'm':
-                mode = optarg;
+            case 'e':
+                if (mode_set) {
+                    usage();
+                    exit(EXIT_FAILURE);
+                }
+                is_encrypt = true;
+                mode_set = true;
                 break;
             case 'd':
+                if (mode_set) {
+                    usage();
+                    exit(EXIT_FAILURE);
+                }
+                is_encrypt = false;
+                mode_set = true;
+                break;
+            case 'f':
                 data_filename = optarg;
                 break;
             case 'p':
@@ -390,15 +403,7 @@ int main(int argc, char** argv) {
                 return EXIT_FAILURE;
         }
     }
-    if (!input_filename || !mode || !password || !data_filename) {
-        usage();
-        return EXIT_FAILURE;
-    }
-    if (strcmp(mode, "e") == 0) {
-        is_encrypt = true;
-    } else if (strcmp(mode, "d") == 0) {
-        is_encrypt = false;
-    } else {
+    if (!input_filename || !password || !data_filename) {
         usage();
         return EXIT_FAILURE;
     }
