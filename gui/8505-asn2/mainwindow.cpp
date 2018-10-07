@@ -10,6 +10,22 @@ static QString tool_path{"8505-ass2"};
 
 //check for if the cli is actually runable
 //thanks to Gerhard Stein for the idea https://stackoverflow.com/a/51041497
+
+/*
+ * function:
+ *    cli_avalible
+ *
+ * return:
+ *    bool
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    checks to see if the cli can be found
+ *
+ * */
+
 bool cli_avalible() {
     QProcess findProcess;
     QStringList arguments;
@@ -35,14 +51,58 @@ bool cli_avalible() {
     }
 }
 
-void MainWindow::on_pushButtonClear_clicked()
-{
+/*
+ * function:
+ *    on_pushButtonClear_clicked
+ *
+ * return:
+ *    void
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    clears out the messages window
+ *
+ * */
+
+void MainWindow::on_pushButtonClear_clicked() {
     ui->textBrowserMessages->setText({});
 }
 
+/*
+ * function:
+ *    append_message
+ *
+ * return:
+ *    QString message
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    adds message to the message window
+ *
+ * */
 void MainWindow::append_message(QString st) {
     ui->textBrowserMessages->append(st);
 }
+
+
+/*
+ * function:
+ *    exec
+ *
+ * return:
+ *    QString result
+ *
+ * parameters:
+ *    QStringList args the args to pass the cli
+ *
+ * notes:
+ *    runs the cli tool with the specifified args
+ *
+ * */
 
 QString exec(QStringList args) {
     QProcess findProcess;
@@ -59,20 +119,79 @@ QString exec(QStringList args) {
     return retStr;
 }
 
+/*
+ * function:
+ *    MainWindow
+ *
+ * notes:
+ *    initializes the main window
+ *
+ * */
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
-{
+    ui(new Ui::MainWindow) {
     ui->setupUi(this);
 }
 
-MainWindow::~MainWindow()
-{
+/*
+ * function:
+ *    ~MainWindow
+ *
+ * notes:
+ *    cleans up the main window
+ *
+ * */
+MainWindow::~MainWindow() {
     delete ui;
 }
 
-void MainWindow::on_pushButtonDecrypt_clicked()
-{
+/*
+ * function:
+ *    bit_pos
+ *
+ * return:
+ *    QString result
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    finds the slected bit pos and returns string of it
+ *
+ * */
+QString MainWindow::bit_pos() {
+    if (ui->buttonGroupBit->checkedButton() == ui->radioButton0)
+        return "0";
+    if (ui->buttonGroupBit->checkedButton() == ui->radioButton1)
+        return "1";
+    if (ui->buttonGroupBit->checkedButton() == ui->radioButton2)
+        return "2";
+    if (ui->buttonGroupBit->checkedButton() == ui->radioButton3)
+        return "3";
+    if (ui->buttonGroupBit->checkedButton() == ui->radioButton4)
+        return "4";
+    if (ui->buttonGroupBit->checkedButton() == ui->radioButton5)
+        return "5";
+    if (ui->buttonGroupBit->checkedButton() == ui->radioButton6)
+        return "6";
+    return "7";
+}
+
+/*
+ * function:
+ *    on_pushButtonDecrypt_clicked
+ *
+ * return:
+ *    void
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    attempts to run decryption
+ *
+ * */
+void MainWindow::on_pushButtonDecrypt_clicked() {
     if (ui->lineEditcf->text().length() == 0 || ui->lineEditout->text().length() == 0) {
         append_message("please select files before attempting decrypting");
         return;
@@ -84,17 +203,30 @@ void MainWindow::on_pushButtonDecrypt_clicked()
     }
 
     QStringList args;
-    args << "-i" << ui->lineEditcf->text() << "-o" << ui->lineEditout->text() << "-p" << ui->lineEditPassword->text() << "-d";
+    args << "-i" << ui->lineEditcf->text() << "-o" << ui->lineEditout->text() << "-p" << ui->lineEditPassword->text() << "-d" << "-s" << bit_pos();
     if (ui->buttonGroupEnc->checkedButton() == ui->radioButtonAES) {
         args << "-a";
     }
-    append_message("running:" + tool_path + args.join(" "));
+    append_message("running: " + tool_path + " "	+ args.join(" "));
     append_message(exec(args));
     append_message("finished");
 }
 
-void MainWindow::on_pushButtonEncrypt_clicked()
-{
+/*
+ * function:
+ *    on_pushButtonEncrypt_clicked
+ *
+ * return:
+ *    void
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    attempts to run encryption
+ *
+ * */
+void MainWindow::on_pushButtonEncrypt_clicked() {
     if (ui->lineEditcf->text().length() == 0 || ui->lineEditout->text().length() == 0 || ui->lineEditin->text().length() == 0) {
         append_message("please select files before attempting encrypting");
         return;
@@ -106,17 +238,30 @@ void MainWindow::on_pushButtonEncrypt_clicked()
     }
 
     QStringList args;
-    args << "-i" << ui->lineEditcf->text() << "-o" << ui->lineEditout->text() << "-f" << ui->lineEditin->text() << "-p" << ui->lineEditPassword->text() << "-e";
+    args << "-i" << ui->lineEditcf->text() << "-o" << ui->lineEditout->text() << "-f" << ui->lineEditin->text() << "-p" << ui->lineEditPassword->text() << "-e" << "-s" << bit_pos();
     if (ui->buttonGroupEnc->checkedButton() == ui->radioButtonAES) {
         args << "-a";
     }
-    append_message("running:" + tool_path + args.join(" "));
+    append_message("running: " + tool_path + " "	+ args.join(" "));
     append_message(exec(args));
     append_message("finished");
 }
 
-void MainWindow::on_pushButtonTool_clicked()
-{
+/*
+ * function:
+ *    on_pushButtonTool_clicked
+ *
+ * return:
+ *    void
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    opens dialog to find tool
+ *
+ * */
+void MainWindow::on_pushButtonTool_clicked() {
     QString mesg;
     tool_path = QFileDialog::getOpenFileName(nullptr, "Tool", ".");
     mesg = "Tool Selected: " + tool_path;
@@ -124,8 +269,21 @@ void MainWindow::on_pushButtonTool_clicked()
     append_message(mesg);
 }
 
-void MainWindow::on_pushButtonIn_clicked()
-{
+/*
+ * function:
+ *    on_pushButtonIn_clicked
+ *
+ * return:
+ *    void
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    opens dialog to find input file
+ *
+ * */
+void MainWindow::on_pushButtonIn_clicked() {
     QString mesg, in_path;
     in_path = QFileDialog::getOpenFileName(nullptr, "Input File", ".");
     mesg = "Input File Opened: " + in_path;
@@ -135,8 +293,21 @@ void MainWindow::on_pushButtonIn_clicked()
     append_message(mesg);
 }
 
-void MainWindow::on_pushButtonOut_clicked()
-{
+/*
+ * function:
+ *    on_pushButtonOut_clicked
+ *
+ * return:
+ *    void
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    opens dialog to find output file
+ *
+ * */
+void MainWindow::on_pushButtonOut_clicked() {
     QString mesg, out_path;
     out_path = QFileDialog::getSaveFileName(nullptr, "Output File", ".");
     mesg = "Output File Opened: " + out_path;
@@ -146,8 +317,21 @@ void MainWindow::on_pushButtonOut_clicked()
     append_message(mesg);
 }
 
-void MainWindow::on_pushButtonCF_clicked()
-{
+/*
+ * function:
+ *    on_pushButtonCF_clicked
+ *
+ * return:
+ *    void
+ *
+ * parameters:
+ *    void
+ *
+ * notes:
+ *    opens dialog to find carrier file
+ *
+ * */
+void MainWindow::on_pushButtonCF_clicked() {
     QString mesg, cf_path, filter{"PNG (*.png);;BMP (*.bmp))"};
     cf_path = QFileDialog::getOpenFileName(nullptr, "Carrier File", ".", filter, &filter);
     mesg = "Carrier File Opened: " + cf_path;
