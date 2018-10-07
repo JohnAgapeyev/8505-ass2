@@ -315,7 +315,8 @@ unsigned char* read_stego(
     int x, y, n;
     unsigned char* data = stbi_load(in_filename, &x, &y, &n, 3);
     if (!data) {
-        return NULL;
+        fprintf(stderr, "Failed to open image\n");
+        exit(EXIT_FAILURE);
     }
 
     for (int i = 0; i < x * y * n; ++i) {
@@ -331,6 +332,10 @@ unsigned char* read_stego(
             ++byte_count;
             if (byte_count > 3 && data_len == 0) {
                 memcpy(&data_len, buffer, sizeof(uint32_t));
+                if ((int) data_len > ((x*y*n) / 8)) {
+                    //Image is corrupted or does not have a message embedded
+                    exit(EXIT_FAILURE);
+                }
             }
             if (byte_count > 3 && byte_count >= data_len + 4) {
                 break;
@@ -391,7 +396,13 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
     int x, y, n;
     unsigned char* data = stbi_load(in_filename, &x, &y, &n, 3);
     if (!data) {
-        return;
+        fprintf(stderr, "Failed to open image\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((int) mesg_len > ((x * y * n) / 8)) {
+        fprintf(stderr, "Message too big for carrier image\n");
+        exit(EXIT_FAILURE);
     }
 
     for (int i = 0; i < x * y * n; ++i) {
