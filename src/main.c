@@ -200,10 +200,15 @@ unsigned char* decrypt_data(unsigned char* message, const size_t mesg_len, const
     checkCryptoAPICall(EVP_CIPHER_CTX_ctrl(
             ctx, EVP_CTRL_GCM_SET_TAG, TAG_LEN, message + mesg_len - TAG_LEN - NONCE_LEN));
 
-    checkCryptoAPICall(EVP_DecryptFinal_ex(ctx, plaintext + len, &len));
+    int res = EVP_DecryptFinal_ex(ctx, plaintext + len, &len);
 
     EVP_CIPHER_CTX_free(ctx);
 
+    if (res == 0) {
+        printf("Bad decrypt\n");
+        free(plaintext);
+        return NULL;
+    }
     return plaintext;
 }
 
