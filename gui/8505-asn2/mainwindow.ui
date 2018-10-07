@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>931</width>
+    <width>1038</width>
     <height>451</height>
    </rect>
   </property>
@@ -14,16 +14,6 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QGraphicsView" name="graphicsViewFTH">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>451</width>
-      <height>331</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
@@ -80,8 +70,8 @@
     <property name="geometry">
      <rect>
       <x>470</x>
-      <y>240</y>
-      <width>451</width>
+      <y>330</y>
+      <width>561</width>
       <height>101</height>
      </rect>
     </property>
@@ -139,7 +129,7 @@
     <widget class="QLabel" name="label_3">
      <property name="geometry">
       <rect>
-       <x>160</x>
+       <x>190</x>
        <y>30</y>
        <width>59</width>
        <height>20</height>
@@ -152,7 +142,7 @@
     <widget class="QLineEdit" name="lineEditPassword">
      <property name="geometry">
       <rect>
-       <x>160</x>
+       <x>190</x>
        <y>50</y>
        <width>141</width>
        <height>23</height>
@@ -162,7 +152,7 @@
     <widget class="QLabel" name="label_6">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>370</x>
        <y>30</y>
        <width>81</width>
        <height>20</height>
@@ -175,7 +165,7 @@
     <widget class="QRadioButton" name="radioButton1">
      <property name="geometry">
       <rect>
-       <x>350</x>
+       <x>400</x>
        <y>50</y>
        <width>31</width>
        <height>21</height>
@@ -191,7 +181,7 @@
     <widget class="QRadioButton" name="radioButton2">
      <property name="geometry">
       <rect>
-       <x>380</x>
+       <x>430</x>
        <y>50</y>
        <width>31</width>
        <height>21</height>
@@ -207,7 +197,7 @@
     <widget class="QRadioButton" name="radioButton3">
      <property name="geometry">
       <rect>
-       <x>410</x>
+       <x>460</x>
        <y>50</y>
        <width>31</width>
        <height>21</height>
@@ -223,7 +213,7 @@
     <widget class="QRadioButton" name="radioButton4">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>370</x>
        <y>70</y>
        <width>31</width>
        <height>21</height>
@@ -239,7 +229,7 @@
     <widget class="QRadioButton" name="radioButton5">
      <property name="geometry">
       <rect>
-       <x>350</x>
+       <x>400</x>
        <y>70</y>
        <width>31</width>
        <height>21</height>
@@ -255,7 +245,7 @@
     <widget class="QRadioButton" name="radioButton6">
      <property name="geometry">
       <rect>
-       <x>380</x>
+       <x>430</x>
        <y>70</y>
        <width>31</width>
        <height>21</height>
@@ -271,7 +261,7 @@
     <widget class="QRadioButton" name="radioButton7">
      <property name="geometry">
       <rect>
-       <x>410</x>
+       <x>460</x>
        <y>70</y>
        <width>31</width>
        <height>21</height>
@@ -290,7 +280,7 @@
     <widget class="QRadioButton" name="radioButton0">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>370</x>
        <y>50</y>
        <width>31</width>
        <height>21</height>
@@ -300,14 +290,40 @@
       <string>0</string>
      </property>
     </widget>
+    <widget class="Line" name="line_3">
+     <property name="geometry">
+      <rect>
+       <x>153</x>
+       <y>20</y>
+       <width>31</width>
+       <height>81</height>
+      </rect>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
+    <widget class="Line" name="line_4">
+     <property name="geometry">
+      <rect>
+       <x>340</x>
+       <y>20</y>
+       <width>31</width>
+       <height>81</height>
+      </rect>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
    </widget>
    <widget class="QGroupBox" name="groupBox_2">
     <property name="geometry">
      <rect>
       <x>470</x>
       <y>10</y>
-      <width>451</width>
-      <height>221</height>
+      <width>561</width>
+      <height>301</height>
      </rect>
     </property>
     <property name="title">
@@ -329,18 +345,18 @@
     <widget class="QTextBrowser" name="textBrowserMessages">
      <property name="geometry">
       <rect>
-       <x>100</x>
-       <y>30</y>
-       <width>341</width>
-       <height>181</height>
+       <x>10</x>
+       <y>60</y>
+       <width>541</width>
+       <height>221</height>
       </rect>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButtonTool">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>60</y>
+       <x>220</x>
+       <y>30</y>
        <width>80</width>
        <height>23</height>
       </rect>
@@ -352,8 +368,8 @@
     <widget class="QPushButton" name="pushButtonClear">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>180</y>
+       <x>70</x>
+       <y>30</y>
        <width>81</width>
        <height>23</height>
       </rect>
@@ -365,8 +381,8 @@
     <widget class="QPushButton" name="pushButtonDecrypt">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>120</y>
+       <x>470</x>
+       <y>30</y>
        <width>81</width>
        <height>23</height>
       </rect>
@@ -378,14 +394,40 @@
     <widget class="QPushButton" name="pushButtonEncrypt">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>90</y>
+       <x>380</x>
+       <y>30</y>
        <width>81</width>
        <height>23</height>
       </rect>
      </property>
      <property name="text">
       <string>Encrypt</string>
+     </property>
+    </widget>
+    <widget class="Line" name="line">
+     <property name="geometry">
+      <rect>
+       <x>330</x>
+       <y>20</y>
+       <width>20</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
+    <widget class="Line" name="line_2">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>20</y>
+       <width>20</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
     </widget>
    </widget>
@@ -444,6 +486,99 @@
       <height>23</height>
      </rect>
     </property>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>451</width>
+      <height>331</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Preview</string>
+    </property>
+    <widget class="QLabel" name="labelImage">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>431</width>
+       <height>291</height>
+      </rect>
+     </property>
+     <property name="palette">
+      <palette>
+       <active>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </active>
+       <inactive>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </inactive>
+       <disabled>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </disabled>
+      </palette>
+     </property>
+     <property name="autoFillBackground">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>No Image Selected</string>
+     </property>
+    </widget>
    </widget>
   </widget>
  </widget>

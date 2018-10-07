@@ -6,7 +6,7 @@
 
 #include <string>
 
-static QString cf_path, in_path, out_path, tool_path{"8505-ass2"}, pass;
+static QString tool_path{"8505-ass2"};
 
 //check for if the cli is actually runable
 //thanks to Gerhard Stein for the idea https://stackoverflow.com/a/51041497
@@ -35,8 +35,13 @@ bool cli_avalible() {
     }
 }
 
+void MainWindow::on_pushButtonClear_clicked()
+{
+    ui->textBrowserMessages->setText({});
+}
+
 void MainWindow::append_message(QString st) {
-    ui->textBrowserMessages->append("\n" + st);
+    ui->textBrowserMessages->append(st);
 }
 
 QString exec(QStringList args) {
@@ -68,55 +73,52 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButtonDecrypt_clicked()
 {
-    if (cf_path.length() == 0 || out_path.length() == 0) {
-        ui->textBrowserMessages->setText("please select files before attempting decrypting");
+    if (ui->lineEditcf->text().length() == 0 || ui->lineEditout->text().length() == 0) {
+        append_message("please select files before attempting decrypting");
         return;
     }
 
     if (!cli_avalible()) {
-        ui->textBrowserMessages->setText("could not find cli tool, please select it");
+        append_message("could not find cli tool, please select it");
         return;
     }
 
     QStringList args;
-    args << "-i" << cf_path << "-o" << out_path << "-p" << ui->lineEditPassword->text() << "-d";
+    args << "-i" << ui->lineEditcf->text() << "-o" << ui->lineEditout->text() << "-p" << ui->lineEditPassword->text() << "-d";
     if (ui->buttonGroupEnc->checkedButton() == ui->radioButtonAES) {
         args << "-a";
     }
     append_message("running:" + tool_path + args.join(" "));
     append_message(exec(args));
+    append_message("finished");
 }
 
 void MainWindow::on_pushButtonEncrypt_clicked()
 {
-    if (cf_path.length() == 0 || in_path.length() == 0 || out_path.length() == 0) {
-        ui->textBrowserMessages->setText("please select files before attempting encrypting");
+    if (ui->lineEditcf->text().length() == 0 || ui->lineEditout->text().length() == 0 || ui->lineEditin->text().length() == 0) {
+        append_message("please select files before attempting encrypting");
         return;
     }
 
     if (!cli_avalible()) {
-        ui->textBrowserMessages->setText("could not find cli tool, please select it");
+        append_message("could not find cli tool, please select it");
         return;
     }
 
     QStringList args;
-    args << "-i" << cf_path << "-o" << out_path << "-f" << in_path << "-p" << ui->lineEditPassword->text() << "-e";
+    args << "-i" << ui->lineEditcf->text() << "-o" << ui->lineEditout->text() << "-f" << ui->lineEditin->text() << "-p" << ui->lineEditPassword->text() << "-e";
     if (ui->buttonGroupEnc->checkedButton() == ui->radioButtonAES) {
         args << "-a";
     }
     append_message("running:" + tool_path + args.join(" "));
     append_message(exec(args));
-}
-
-void MainWindow::on_pushButtonClear_clicked()
-{
-    ui->textBrowserMessages->setText({});
+    append_message("finished");
 }
 
 void MainWindow::on_pushButtonTool_clicked()
 {
     QString mesg;
-    tool_path = QFileDialog::getOpenFileName(0, "Tool", ".");
+    tool_path = QFileDialog::getOpenFileName(nullptr, "Tool", ".");
     mesg = "Tool Selected: " + tool_path;
 
     append_message(mesg);
@@ -124,27 +126,36 @@ void MainWindow::on_pushButtonTool_clicked()
 
 void MainWindow::on_pushButtonIn_clicked()
 {
-    QString mesg;
-    in_path = QFileDialog::getOpenFileName(0, "Input File", ".");
+    QString mesg, in_path;
+    in_path = QFileDialog::getOpenFileName(nullptr, "Input File", ".");
     mesg = "Input File Opened: " + in_path;
+
+    ui->lineEditin->setText(in_path);
 
     append_message(mesg);
 }
 
 void MainWindow::on_pushButtonOut_clicked()
 {
-    QString mesg;
-    out_path = QFileDialog::getSaveFileName(0, "Output File", ".");
+    QString mesg, out_path;
+    out_path = QFileDialog::getSaveFileName(nullptr, "Output File", ".");
     mesg = "Output File Opened: " + out_path;
+
+    ui->lineEditout->setText(out_path);
 
     append_message(mesg);
 }
 
 void MainWindow::on_pushButtonCF_clicked()
 {
-    QString mesg;
-    cf_path = QFileDialog::getOpenFileName(0, "Carrier File", ".", "*.png;*.bmp");
+    QString mesg, cf_path, filter{"PNG (*.png);;BMP (*.bmp))"};
+    cf_path = QFileDialog::getOpenFileName(nullptr, "Carrier File", ".", filter, &filter);
     mesg = "Carrier File Opened: " + cf_path;
 
-    ui->textBrowserMessages->setText(mesg);
+    ui->lineEditcf->setText(cf_path);
+
+    ui->labelImage->setPixmap(QPixmap{cf_path});
+    ui->labelImage->setText("");
+
+    append_message(mesg);
 }
