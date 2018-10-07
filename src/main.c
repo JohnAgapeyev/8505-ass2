@@ -44,6 +44,7 @@
     } while (0)
 
 bool use_aes = false;
+bool out_bmp = false;
 
 size_t encrypt_aead(const unsigned char* plaintext, size_t plain_len, const unsigned char* aad,
         const size_t aad_len, const unsigned char* key, const unsigned char* iv,
@@ -313,6 +314,9 @@ unsigned char* read_stego(
 
     int x, y, n;
     unsigned char* data = stbi_load(in_filename, &x, &y, &n, 3);
+    if (!data) {
+        return NULL;
+    }
 
     for (int i = 0; i < x * y * n; ++i) {
         if (data[i] % 2) {
@@ -386,6 +390,9 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
 
     int x, y, n;
     unsigned char* data = stbi_load(in_filename, &x, &y, &n, 3);
+    if (!data) {
+        return;
+    }
 
     for (int i = 0; i < x * y * n; ++i) {
         if (!!(ciphertext[byte_count] & (1 << bit_count)) ^ (data[i] % 2)) {
@@ -406,7 +413,12 @@ void write_stego(const char* in_filename, const char* out_filename, const char* 
     }
     printf("\n");
 
-    stbi_write_png(out_filename, x, y, n, data, x * n);
+    if (out_bmp) {
+        stbi_write_bmp(out_filename, x, y, n, data);
+    } else {
+        stbi_write_png(out_filename, x, y, n, data, x * n);
+    }
+
     stbi_image_free(data);
 
     free(ciphertext);
@@ -431,10 +443,11 @@ int main(int argc, char** argv) {
                 {"input", required_argument, 0, 'i'}, {"output", required_argument, 0, 'o'},
                 {"mode", required_argument, 0, 'm'}, {"data", required_argument, 0, 'd'},
                 {"password", required_argument, 0, 'p'}, {"aes", no_argument, 0, 'a'},
-                {0, 0, 0, 0}};
+                {"bmp", no_argument, 0, 'b'}, {0, 0, 0, 0}};
 
         int option_index = 0;
-        if ((choice = getopt_long(argc, argv, "hi:o:m:d:p:a", long_options, &option_index)) == -1) {
+        if ((choice = getopt_long(argc, argv, "hi:o:m:d:p:ab", long_options, &option_index))
+                == -1) {
             break;
         }
 
@@ -456,6 +469,9 @@ int main(int argc, char** argv) {
                 break;
             case 'a':
                 use_aes = true;
+                break;
+            case 'b':
+                out_bmp = true;
                 break;
             case 'h':
             case '?':
