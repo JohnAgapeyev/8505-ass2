@@ -250,7 +250,7 @@ unsigned char* read_stego(
             ++byte_count;
             if (byte_count > 3 && data_len == 0) {
                 memcpy(&data_len, buffer, sizeof(uint32_t));
-                if ((int) data_len > ((x * y * n) / 8)) {
+                if ((int) data_len * 8 > x*y*n) {
                     //Image is corrupted or does not have a message embedded
                     exit(EXIT_FAILURE);
                 }
